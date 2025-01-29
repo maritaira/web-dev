@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'media',
     'rest_framework',
     'storages',
+    'pages',
 ]
 
 MIDDLEWARE = [
@@ -151,3 +152,22 @@ STORAGES = {
         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
     },
 }
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],  # No need to manually specify app directories
+        'APP_DIRS': True,  # Ensures Django looks for templates in app directories
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]

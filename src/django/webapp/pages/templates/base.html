@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}My Website{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1>Website Header</h1>
+        <nav>
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'all_cars' %}">All Cars</a>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <p>Website Footer</p>
+    </footer>
+</body>
+</html>
