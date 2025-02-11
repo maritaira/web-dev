@@ -138,13 +138,14 @@ AWS_ACCESS_KEY_ID = config('S3_ACCESS_KEY')
 AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = config('AWS_REGION_NAME')
 AWS_STORAGE_USERS_BUCKET_NAME = config('S3_USERS_BUCKET_NAME')
+# DEFAULT_FILE_STORAGE = "webapp.storages.UsersBucketStorage"
 
 
 STORAGES = {
 
     # Media file (image) management  
     "default": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        "BACKEND": "webapp.storages.UsersBucketStorage",
     },
    
     # CSS and JS file management

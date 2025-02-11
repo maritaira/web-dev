@@ -23,9 +23,8 @@ from django.http import HttpResponse
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('media/', include('media.urls')),
-    path('', lambda request: HttpResponse("Welcome to the django project!")),
     path('', views.index, name='index'),  # Route for the app's homepage
-    path('', include('pages.urls')),
+    path('pages/', include('pages.urls')),
 ]
 
 ##controls paths to apps

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload</title>
+</head>
+<body>
+    <h1>View and Upload Images for a Car</h1>
+    <form method="GET" action="{% url 'display_images' %}">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="{{ username }}" required>
+
+        <label for="car_name">Car Name:</label>
+        <input type="text" id="car_name" name="car_name" value="{{ car_name }}" required>
+
+        <button type="submit">View Images</button>
+    </form>
+
+    {% if username and car_name %}
+        <h2>Images for {{ car_name }}</h2>
+        <div>
+            {% for image in images %}
+                {% if image.image_url %}
+                    <img src="{{ image.image_url }}" alt="Uploaded Image" width="200">
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <h2>Upload more images</h2>
+        <form method="POST" action="{% url 'upload_image' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="username" value="{{ username }}">
+            <input type="hidden" name="car_name" value="{{ car_name }}">
+            <label for="images">Select Images:</label>
+            <input type="file" id="images" name="images" multiple>
+            <button type="submit">Upload</button>
+        </form>
+    {% endif %}
+
+    {% if success %}
+        <p style="color: green;">{{ success }}</p>
+    {% endif %}
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+</body>
+</html>
