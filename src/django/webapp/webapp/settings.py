@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-as6y4!&(#!c$z2*5qy!4(j1i#@c&0p_@9d75l54v@oc0qpv^+r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -38,9 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'pages',
-    'media',
-    'rest_framework',
-    'storages',
 ]
 
 MIDDLEWARE = [
@@ -77,16 +75,16 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-from decouple import config
+#from decouple import config
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
+        'NAME': 'sp4_db',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'USER': 'root',
+        'PASSWORD': '@v@n!B2002',
     }
 }
 
@@ -132,11 +130,15 @@ MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+STATICFILES_DIRS = [
+    BASE_DIR / "pages/static",  # Resolves to "/Users/avanibhute/Desktop/web-dev/src/django/webapp/pages/static"
+]
+
+# When DEBUG = False, collect static files here
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
-import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TEMPLATES = [
     {
@@ -153,23 +155,3 @@ TEMPLATES = [
         },
     },
 ]
-
-
-AWS_ACCESS_KEY_ID = config('S3_ACCESS_KEY')
-AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
-AWS_REGION_NAME = config('AWS_REGION_NAME')
-AWS_STORAGE_USERS_BUCKET_NAME = config('S3_USERS_BUCKET_NAME')
-
-
-STORAGES = {
-
-    # Media file (image) management  
-    "default": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-    },
-   
-    # CSS and JS file management
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-    },
-}

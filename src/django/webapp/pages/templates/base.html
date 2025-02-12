@@ -1,22 +1,67 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{% block title %}My Website{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My App{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <style>
+        /* Custom styles for left sidebar */
+        .sidebar {
+            height: 100vh; /* Full height */
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: #2E3033; /* Dark gray */
+            padding-top: 20px;
+            width: 250px;
+        }
+        .sidebar .nav-link {
+            color: white;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #E7A523; /* Gold */
+        }
+        .main-content {
+            margin-left: 250px; /* Same width as sidebar */
+            padding: 20px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Website Header</h1>
-        <nav>
-            <a href="{% url 'dashboard' %}">Dashboard</a>
-            <a href="{% url 'login' %}">Login</a>
-            <a href="{% url 'all_cars' %}">All Cars</a>
-        </nav>
-    </header>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-    <footer>
-        <p>Website Footer</p>
-    </footer>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Left Sidebar -->
+            <nav class="col-md-2 sidebar">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'all_cars' %}">All Cars</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'all_videos' %}">All Videos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'create_acc' %}">Create Account</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'upcoming_races' %}">Upcoming Races</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-md-10 main-content">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
 </body>
 </html>

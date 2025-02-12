@@ -17,14 +17,10 @@ Including another URLconf
 from django.urls import path, include
 from . import views
 from django.contrib import admin
-from django.urls import path, include
-from django.http import HttpResponse
 
 urlpatterns = [
     path('', views.index, name='index'),  # Route for the app's homepage
     path('', include('pages.urls')),
-    path('media/', include('media.urls')),
-    path('', lambda request: HttpResponse("Welcome to the django project!")),
 ]
 
 ##controls paths to apps

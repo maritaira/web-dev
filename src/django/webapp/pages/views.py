@@ -10,6 +10,8 @@ def index(request):
 
 def dashboard(request):
     return render(request, 'dashboard.html')
+# def base(request):
+#     return render(request, 'base.html')
 
 def all_videos(request):
     return render(request, 'all_videos.html')
