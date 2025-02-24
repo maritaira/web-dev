@@ -3,6 +3,7 @@ from django.shortcuts import render
 # Create your views here.
 from django.http import HttpResponse
 import requests
+from media.models import Video
 
 
 def index(request):
@@ -13,7 +14,12 @@ def dashboard(request):
     return render(request, 'dashboard.html')
 
 def all_videos(request):
-    return render(request, 'all_videos.html')
+    videos = []
+    race_name = request.GET.get("race", "")
+    return render(request, 'all_videos.html', {"videos": videos})
+
+def view_video(request):
+    return
 
 def login_pg(request):
     return render(request, 'login.html')
@@ -25,7 +31,35 @@ def all_cars(request):
 def upcoming_races(request):
     return render (request, 'upcoming_races.html')
 
-MEDIA_API_URL = "http://127.0.0.1:8000/media/images/"
+MEDIA_API_URL = "http://127.0.0.1:8000/media/"
+
+def play_video(request):
+    print("in play_video")
+    video = None
+    error_message = None
+    race = request.GET.get("race", "")
+    print(race)
+    
+    if race:
+        fetch_video_url = f"{MEDIA_API_URL}videos/?race={race}"
+        try:
+            response = requests.get(fetch_video_url)
+            
+            if response.status_code == 200:
+                video = response.json()
+                print(video)
+            else:
+                print("error, could not retrieve video")
+                print(response.status_code)
+                return render(request, "play_video.html", {"error": "Could not retrieve video."})
+        except requests.exceptions.RequestException as e:
+            print(str(e))
+            error_message = "Video not found"
+            return render(request, "play_video.html", {"error": f"Error retrieving video: {str(e)}"})
+
+    print("not sure what happended")
+    return render(request, "play_video.html", {"video": video, "error_message": error_message})
+            
 
 def display_images(request):
     """Fetch images for car"""
@@ -37,10 +71,10 @@ def display_images(request):
     # print(car_name)
     
     if username and car_name:
-        fetch_api_url = f"{MEDIA_API_URL}?username={username}&car_name={car_name}"
+        fetch_image_url = f"{MEDIA_API_URL}images/?username={username}&car_name={car_name}"
         # print(fetch_api_url)
         try:
-            response = requests.get(fetch_api_url)
+            response = requests.get(fetch_image_url)
             # print("get request sent")
             # print(response.status_code)
             if response.status_code == 200:
