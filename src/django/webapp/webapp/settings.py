@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import boto3
 from pathlib import Path
 import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -75,16 +77,22 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-#from decouple import config
+from decouple import config
 
 DATABASES = {
     'default': {
+        # 'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': 'sp4_db',
+        # 'HOST': 'localhost',
+        # 'PORT': '3306',
+        # 'USER': 'root',
+        # 'PASSWORD': '@v@n!B2002',
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sp4_db',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'USER': 'root',
-        'PASSWORD': '@v@n!B2002',
+        'NAME': config('DB_NAME'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
     }
 }
 
@@ -130,6 +138,14 @@ MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+AWS_ACCESS_KEY_ID = config('S3_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
+AWS_REGION_NAME = config('AWS_REGION_NAME')
+AWS_STORAGE_CARS_BUCKET_NAME = config('S3_CARS_BUCKET_NAME')
+AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
+
 STATICFILES_DIRS = [
     BASE_DIR / "pages/static",  # Resolves to "/Users/avanibhute/Desktop/web-dev/src/django/webapp/pages/static"
 ]
@@ -137,7 +153,20 @@ STATICFILES_DIRS = [
 # When DEBUG = False, collect static files here
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+STORAGES = {
 
+    # Media file (image) management  
+    "default": {
+        "BACKEND": "webapp.storages.UsersBucketStorage",
+    },
+   
+    # CSS and JS file management
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+    },
+}
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 TEMPLATES = [
