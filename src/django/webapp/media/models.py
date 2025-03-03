@@ -4,7 +4,7 @@ from webapp.storages import UsersBucketStorage, RacesBucketStorage
 # Create your models here.
 
 def image_upload_to(instance, filename):
-    path = f"{instance.username}/cars/{instance.car_name}/images/{filename}"
+    path = f"{instance.car_name}/images/{filename}"
     print(f"Uploading Image to: {path}")
     return path
 

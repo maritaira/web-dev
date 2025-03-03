@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'storages',
     'pages',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -51,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middlewares.CognitoAuthMiddleware',
 ]
 
 ROOT_URLCONF = 'webapp.urls'
@@ -133,20 +135,33 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 AWS_ACCESS_KEY_ID = config('S3_ACCESS_KEY')
 AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = config('AWS_REGION_NAME')
-AWS_STORAGE_USERS_BUCKET_NAME = config('S3_USERS_BUCKET_NAME')
+AWS_STORAGE_CARS_BUCKET_NAME = config('S3_CARS_BUCKET_NAME')
 AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
 # DEFAULT_FILE_STORAGE = "webapp.storages.UsersBucketStorage"
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",  
+    "django_cognito_jwt.auth.CognitoJSONWebTokenBackend",
+]
+
+COGNITO_USER_POOL_ID = config('COGNITO_USER_POOL_ID')
+COGNITO_APP_CLIENT_ID = config('COGNITO_APP_CLIENT_ID')
+
+COGNITO_JWT_AUTH = {
+    "AWS_REGION": AWS_REGION_NAME,
+    "USER_POOL_ID": COGNITO_USER_POOL_ID,
+    "APP_CLIENT_ID": COGNITO_APP_CLIENT_ID,
+}
 
 
 STORAGES = {
 
     # Media file (image) management  
     "default": {
-        "BACKEND": "webapp.storages.UsersBucketStorage",
+        "BACKEND": "webapp.storages.CarsBucketStorage",
     },
    
     # CSS and JS file management

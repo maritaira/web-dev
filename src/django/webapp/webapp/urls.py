@@ -25,6 +25,7 @@ urlpatterns = [
     path('media/', include('media.urls')),
     path('', views.index, name='index'),  # Route for the app's homepage
     path('pages/', include('pages.urls')),
+    path('accounts/', include('accounts.urls')),
 ]
 
 ##controls paths to apps
