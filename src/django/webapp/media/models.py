@@ -1,5 +1,5 @@
 from django.db import models
-from webapp.storages import UsersBucketStorage
+from webapp.storages import CarsBucketStorage, RacesBucketStorage
 
 # Create your models here.
 
@@ -11,7 +11,7 @@ def image_upload_to(instance, filename):
 class Image(models.Model):
     username = models.CharField(max_length=255, default="default_user")
     car_name = models.CharField(max_length=100)
-    image = models.ImageField(storage=UsersBucketStorage, upload_to=image_upload_to) 
+    image = models.ImageField(storage=CarsBucketStorage(), upload_to=image_upload_to)
     upload_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

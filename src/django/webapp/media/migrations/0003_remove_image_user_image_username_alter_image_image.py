@@ -24,6 +24,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='image',
             name='image',
-            field=models.ImageField(storage=webapp.storages.UsersBucketStorage, upload_to=media.models.image_upload_to),
+            field=models.ImageField(storage=webapp.storages.CarsBucketStorage, upload_to=media.models.image_upload_to),
         ),
     ]

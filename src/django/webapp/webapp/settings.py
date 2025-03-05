@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+
+
 import boto3
 from pathlib import Path
 import os
@@ -17,7 +19,6 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -41,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'pages',
+    'media',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -145,6 +148,10 @@ AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = config('AWS_REGION_NAME')
 AWS_STORAGE_CARS_BUCKET_NAME = config('S3_CARS_BUCKET_NAME')
 AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
+# print(config('S3_RACES_BUCKET_NAME'))  # Should print the bucket name from .env
+# print(config('S3_ACCESS_KEY'))
+# print(config('S3_SECRET_ACCESS_KEY'))
+
 
 STATICFILES_DIRS = [
     BASE_DIR / "pages/static",  # Resolves to "/Users/avanibhute/Desktop/web-dev/src/django/webapp/pages/static"
@@ -154,17 +161,14 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
-
-    # Media file (image) management  
     "default": {
-        "BACKEND": "webapp.storages.UsersBucketStorage",
+        "BACKEND": "webapp.storages.CarsBucketStorage",  # Or use RacesBucketStorage
     },
-   
-    # CSS and JS file management
     "staticfiles": {
         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
     },
 }
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -184,3 +188,4 @@ TEMPLATES = [
         },
     },
 ]
+

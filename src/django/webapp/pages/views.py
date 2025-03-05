@@ -25,3 +25,4 @@ def all_cars(request):
     return render(request, 'all_cars.html')
 def upcoming_races(request):
     return render (request, 'upcoming_races.html')
+
