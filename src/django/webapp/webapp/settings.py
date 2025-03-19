@@ -41,9 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'pages',
     'media',
-    'rest_framework'
+    'rest_framework',
+    'storages',
+    'pages',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middlewares.CognitoAuthMiddleware',
 ]
 
 ROOT_URLCONF = 'webapp.urls'
@@ -61,7 +64,9 @@ ROOT_URLCONF = 'webapp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -142,15 +147,27 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 AWS_ACCESS_KEY_ID = config('S3_ACCESS_KEY')
 AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = config('AWS_REGION_NAME')
 AWS_STORAGE_CARS_BUCKET_NAME = config('S3_CARS_BUCKET_NAME')
 AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
-# print(config('S3_RACES_BUCKET_NAME'))  # Should print the bucket name from .env
-# print(config('S3_ACCESS_KEY'))
-# print(config('S3_SECRET_ACCESS_KEY'))
+DEFAULT_FILE_STORAGE = 'webapp.storages.CarsBucketStorage'
+
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",  
+    "django_cognito_jwt.auth.CognitoJSONWebTokenBackend",
+]
+
+COGNITO_USER_POOL_ID = config('COGNITO_USER_POOL_ID')
+COGNITO_APP_CLIENT_ID = config('COGNITO_APP_CLIENT_ID')
+
+COGNITO_JWT_AUTH = {
+    "AWS_REGION": AWS_REGION_NAME,
+    "USER_POOL_ID": COGNITO_USER_POOL_ID,
+    "APP_CLIENT_ID": COGNITO_APP_CLIENT_ID,
+}
 
 
 STATICFILES_DIRS = [
@@ -160,32 +177,9 @@ STATICFILES_DIRS = [
 # When DEBUG = False, collect static files here
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STORAGES = {
-    "default": {
-        "BACKEND": "webapp.storages.CarsBucketStorage",  # Or use RacesBucketStorage
-    },
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-    },
-}
 
+import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],  # No need to manually specify app directories
-        'APP_DIRS': True,  # Ensures Django looks for templates in app directories
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
 
