@@ -42,9 +42,16 @@ INSTALLED_APPS = [
     'storages',
     'pages',
     'accounts',
+    'races',
+    
+    
+    #oath2
+    'oauth2_provider',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,6 +61,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'accounts.middlewares.CognitoAuthMiddleware',
 ]
+
+# OAuth2 settings
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,  # 1 hour
+}
+
+# Allow frontend access (optional, adjust accordingly)
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'webapp.urls'
 
@@ -143,12 +158,15 @@ AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
 # DEFAULT_FILE_STORAGE = "webapp.storages.UsersBucketStorage"
 
 AUTHENTICATION_BACKENDS = [
+    'accounts.auth_backends.CognitoJWTAuthentication',
     "django.contrib.auth.backends.ModelBackend",  
     "django_cognito_jwt.auth.CognitoJSONWebTokenBackend",
 ]
 
 COGNITO_USER_POOL_ID = config('COGNITO_USER_POOL_ID')
 COGNITO_APP_CLIENT_ID = config('COGNITO_APP_CLIENT_ID')
+REDIRECT_URI = config('COGNITO_REDIRECT_URI')
+TOKEN_ENDPOINT = config('COGNITO_TOKEN_ENDPOINT')
 
 COGNITO_JWT_AUTH = {
     "AWS_REGION": AWS_REGION_NAME,
@@ -188,3 +206,12 @@ TEMPLATES = [
         },
     },
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "accounts.auth_backends.CognitoJWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}

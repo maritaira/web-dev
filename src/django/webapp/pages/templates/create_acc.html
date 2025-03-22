@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Account</title>
+</head>
+<body>
+    <h2>Sign Up</h2>
+    <form id="signup-form">
+        {% comment %} <label for="firstname">First name:</label><br> {% endcomment %}
+        <input type="text" id="firstname" name="firstname" placeholder="First Name" required><br><br>
+        {% comment %} <label for="lastname">Last name:</label><br> {% endcomment %}
+        <input type="text" id="lastname" name="lastname" placeholder="Last Name" required><br><br>
+        {% comment %} <label for="username">Username:</label><br> {% endcomment %}
+        <input type="text" id="username" name="username" placeholder="Username" required><br><br>
+        {% comment %} <label for="password">Password:</label><br> {% endcomment %}
+        <input type="password" id="password" name="password" placeholder="Password" required><br><br>
+        {% comment %} <label for="email">Email:</label><br> {% endcomment %}
+        <input type="email" id="email" name="email" placeholder="Email" required><br><br>
+        <label for="user_group">User Type:</label><br>
+        <input type="checkbox" id="raceowner" name="user_group" value="raceowner">
+        <label for="raceowner"> I want to be a Race Owner</label><br>
+        <input type="checkbox" id="carowner" name="user_group" value="carowner">
+        <label for="carowner"> I want to be a Car Owner</label><br><br>
+        <button type="submit">Sign Up</button>
+    </form>
+    <p id="signup-message"></p>
+    <script>
+        document.getElementById("signup-form").onsubmit = async function(event) {
+            event.preventDefault();
+            console.log("Form submitted!");
+
+            let formData = {
+                name: document.getElementById("firstname").value,
+                lastname: document.getElementById("lastname").value,
+                username: document.getElementById("username").value,
+                email: document.getElementById("email").value,
+                password: document.getElementById("password").value,
+                groups: Array.from(document.querySelectorAll('input[name="user_group"]:checked')).map(el => el.value)
+            };
+
+            console.log("Sending data:", formData);
+
+            const response = await fetch("/auth/sign-up/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+
+            let data = await response.json();
+            console.log("Response:", data);
+            alert(data.message || data.error);
+        };
+    </script>
+</body>
+</html>
