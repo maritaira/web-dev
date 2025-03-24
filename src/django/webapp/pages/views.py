@@ -59,44 +59,18 @@ def upcoming_races(request):
 MEDIA_API_URL = "http://127.0.0.1:8000/media/"
 
 def play_video(request):
-    print("in play_video")
-    video = None
-    error_message = None
-    race = request.GET.get("race", "")
-    print(race)
+    race_title = request.GET.get('race')
     
-    if race:
-        fetch_video_url = f"{MEDIA_API_URL}videos/?race={race}"
-        try:
-            response = requests.get(fetch_video_url)
-            
-            if response.status_code == 200:
-                video_data = response.json()
-                print(video_data)
-                
-                video_url = video_data[0]["video_url"]  # Assuming the video URL is returned as "video_url"
-                
-                # Check if the video already exists in the database
-                video_exists = Video.objects.filter(file=video_url).exists()
-                
-                if not video_exists:
-                    Video.objects.create(race=race, file=video_url)
-                    print("New video created.")
-                else:
-                    print("Video already exists in the database.")
-                
-                video = video_data
-                
-            else:
-                print("Error, could not retrieve video")
-                return render(request, "play_video.html", {"error": "Could not retrieve video."})
-        except requests.exceptions.RequestException as e:
-            print(str(e))
-            error_message = "Video not found"
-            return render(request, "play_video.html", {"error": f"Error retrieving video: {str(e)}"})
+    # Fetch the video corresponding to the race title from the database
+    video = Video.objects.filter(race=race_title).first()
 
-    return render(request, "play_video.html", {"video": video, "error_message": error_message})
+    if not video:
+        return render(request, 'play_video.html', {'error': "Video not found."})
 
+    # Pass video URL to the template for rendering
+    video_url = video.file.url
+
+    return render(request, 'play_video.html', {'race_title': race_title, 'video_url': video_url})
 
 
 def display_images(request):

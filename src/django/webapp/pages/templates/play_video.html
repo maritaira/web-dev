@@ -3,36 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play Video</title>
+    <title>{{ race_title }} Video</title>
 </head>
-
-
 <body>
-    <h2>Play Video</h2>
-
-    <form method="GET" action="{% url 'pages:play_video' %}">
-        <label for="race">Enter Race Name:</label>
-        <input type="text" id="race" name="race" value="{{ race }}" required>
-
-        <button type="submit">Search</button>
-    </form>
-
-    {% if error_message %}
-        <p style="color: red;">{{ error_message }}</p>
-    {% endif %}
-
-    {% if video %}
-        <h3>{{ video.race }}</h3>
-        {% comment %} <p>{{ video.video_url }}</p> {% endcomment %}
-        <video width="640" height="360" controls>
-            <source src="{{ video.video_url }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+    <h1>{{ race_title }} Video</h1>
+    
+    {% if video_url %}
+    <video controls width="40%" height=auto>
+        <source src="{{ video_url }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
     {% else %}
-        <p>No video found for the given title.</p>
+        <p>No video found for this race.</p>
     {% endif %}
-
-    <a href="{% url 'pages:all_videos' %}">Back to All Videos</a>
-
+    
 </body>
+    <a href="{% url 'pages:all_videos' %}">Back to All Videos</a>
 </html>
