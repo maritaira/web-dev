@@ -158,8 +158,8 @@ AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
 # DEFAULT_FILE_STORAGE = "webapp.storages.UsersBucketStorage"
 
 AUTHENTICATION_BACKENDS = [
-    'accounts.auth_backends.CognitoJWTAuthentication',
     "django.contrib.auth.backends.ModelBackend",  
+    'accounts.auth_backends.CognitoJWTAuthentication',
     "django_cognito_jwt.auth.CognitoJSONWebTokenBackend",
 ]
 
@@ -209,7 +209,8 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "accounts.auth_backends.CognitoJWTAuthentication",
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",

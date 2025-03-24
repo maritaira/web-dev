@@ -20,7 +20,13 @@ COGNITO_PUBLIC_KEYS = get_cognito_public_keys()
 class CognitoJWTAuthentication(BaseBackend):
     def authenticate(self, request, token=None):
         print("inside authenticate()")
+        
+        # if request.path in ["/auth/sign-up/", "/auth/sign-in/"]:
+        #     print(f"Skipping auth for {request.path}")
+        #     return None
+        
         token = request.headers.get("Authorization")
+        print(f"got headers: {token}")
         
         if token and token.startswith("Bearer "):
             token = token.replace("Bearer ", "").strip()
@@ -48,3 +54,7 @@ class CognitoJWTAuthentication(BaseBackend):
             except Exception as e:
                 print("JWT authentication error:", str(e))
                 return None
+            
+        else:
+            print("no token provided")
+            return None

@@ -26,6 +26,7 @@ def login_pg(request):
 
 def create_acc(request):
     return render(request, 'create_acc.html')
+
 def all_cars(request):
     return render(request, 'all_cars.html')
 def upcoming_races(request):

@@ -14,8 +14,14 @@ class CognitoAuthMiddleware:
         self.get_response = get_response
         
     def __call__(self, request):
-        token = request.headers.get("Authorization")
+        print("in call (middleware)")
         
+        if request.path in ["/auth/sign-up/", "/auth/sign-in/"]:
+            print(f"Skipping middleware for {request.path}")
+            return self.get_response(request)
+        
+        token = request.headers.get("Authorization")
+        print(f"header: {token}")
         if token and token.startswith("Bearer "):
             token = token.replace("Bearer ", "").strip()
             

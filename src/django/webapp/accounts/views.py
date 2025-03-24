@@ -19,7 +19,11 @@ class SignUpView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
+        # print("in SignUpView")
+        req = request.data
+        # print(req)
+        # print(f"content type: {request.content_type}")
+        serializer = SignUpSerializer(data=req)
         if serializer.is_valid():
             data = serializer.validated_data
             print(data)
@@ -28,12 +32,10 @@ class SignUpView(APIView):
             lastname = data["lastname"]
             username = data["username"]
             password = data["password"]
-            user_group = data["user_group"]
             
             try:
-                print("in try block")
+                # print("in try block")
                 # create user in Cognito
-                print(f"Cognito client id: {COGNITO_APP_CLIENT_ID}")
                 response = client.sign_up(
                     ClientId=COGNITO_APP_CLIENT_ID,
                     Username=username,
@@ -54,11 +56,15 @@ class SignUpView(APIView):
                     ],
                 )
                 
+                print(response)
+                
                 # confirm the user (if auto-confirmation is disabled, they must verify via email)
-                client.admin_confirm_sign_up(
+                confirm = client.admin_confirm_sign_up(
                     UserPoolId=COGNITO_USER_POOL_ID,
                     Username=username
                 )
+                
+                # print(confirm)
                 
                  # Assign user to groups
                 if "groups" in data:
@@ -72,9 +78,8 @@ class SignUpView(APIView):
                         except Exception as e:
                             print(f"Error adding user to {group}: {e}")
                 
-                if response['UserConfirmed']:
-                    print(f"User {username} successfully registered as {user_group}")
-                return Response({"message": f"User successfully registered as {user_group}"})
+                print(f"User {username} successfully registered")
+                return Response({"message": f"User successfully registered"})
             
             except client.exceptions.UsernameExistsException:
                 return Response({"error": "User already exists"}, status=400)
@@ -83,7 +88,7 @@ class SignUpView(APIView):
                 print(str(e))
                 return Response({"error": str(e)}, status=500)
             
-        print(serializer.errors)
+        print(f"Serializer errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
 
