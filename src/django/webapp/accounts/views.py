@@ -34,7 +34,7 @@ class SignUpView(APIView):
             password = data["password"]
             
             try:
-                # print("in try block")
+                # print("Running sign_up()")
                 # create user in Cognito
                 response = client.sign_up(
                     ClientId=COGNITO_APP_CLIENT_ID,
@@ -96,6 +96,7 @@ class SignInView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
+        print("in SignInView")
         serializer = SignInSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
@@ -104,6 +105,7 @@ class SignInView(APIView):
             password = data["password"]
             
             try:
+                # print("Running initiate_auth()")
                 response = client.initiate_auth(
                     ClientId=COGNITO_APP_CLIENT_ID,
                     AuthFlow="USER_PASSWORD_AUTH",
@@ -113,17 +115,31 @@ class SignInView(APIView):
                     },
                 )
                 
+                # print(response)
+                
                 id_token = response["AuthenticationResult"]["IdToken"]
                 access_token = response["AuthenticationResult"]["AccessToken"]
                 
-                # Get user groups
+                
                 user_info = client.get_user(AccessToken=access_token)
-                groups = []
-                for attr in user_info["UserAttributes"]:
-                    if attr["Name"] == "cognito:groups":
-                        groups = attr["Value"].split(",")  # Store groups in a list
+                # print(user_info)
+                groups_response = client.admin_list_groups_for_user(
+                    UserPoolId=COGNITO_USER_POOL_ID,
+                    Username=username
+                )
+                groups = [group['GroupName'] for group in groups_response.get('Groups', [])]
                 print(f"Successfully signed in as {user_info["Username"]}")
-                return Response({"id_token": id_token, "access_token": access_token, "groups": groups}, status=status.HTTP_200_OK)
+                response = Response({"message": "Sign-in successful",
+                                 "id_token": id_token, 
+                                 "access_token": access_token, 
+                                 "username": user_info["Username"], 
+                                 "groups": groups
+                                 }, status=status.HTTP_200_OK,
+                                    content_type="application/json")
+                # print(f"Response data: {response.data}")
+                # print("Content-Type Header:", response.headers.get('Content-Type')) 
+                # print(f"response content_type: {type(response)}")
+                return response
             except client.exceptions.NotAuthorizedException:
                 print("notauthorizedexception")
                 return Response({"error": "Incorrect username or password"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -138,7 +154,7 @@ class SignInView(APIView):
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-'''
+''':
 def getTokens(code):
     encodeData = base64.b64encode(bytes(f"{COGNITO_APP_CLIENT_ID}", "ISO-8859-1")).decode("ascii")
     
