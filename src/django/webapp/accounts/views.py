@@ -1,124 +1,177 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from .serializers import SignInSerializer, SignUpSerializer
 from django.views.decorators.csrf import csrf_exempt
-from webapp.settings import COGNITO_APP_CLIENT_ID, COGNITO_USER_POOL_ID, AWS_REGION_NAME
+from webapp.settings import COGNITO_APP_CLIENT_ID, COGNITO_USER_POOL_ID, AWS_REGION_NAME, REDIRECT_URI, TOKEN_ENDPOINT
 import requests
 import boto3
 import json
+import base64
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def protected_view(request):
-    return Response({"message": f"Hello, {request.user.username}"})
 
+# initializing AWS Cognito client
 client = boto3.client("cognito-idp", region_name=AWS_REGION_NAME)
 
-@csrf_exempt
-def sign_up(request):
-    if request.method == "POST":
-        # get user details
-        data = json.loads(request.body)
-        print(data)
-        email = data.get("email")
-        name = data.get("name")
-        lastname = data.get("lastname")
-        username = data.get("username")
-        password = data.get("password")
-        user_group = data.get("user_group")
-        
-        if not email or not name or not lastname or not username or not password or not user_group:
-            return Response({"error": "Missing required fields"}, status=400)
-        
-        print(f"name: {name}")
-        
-        try:
-            print("in try block")
-            # create user in Cognito
-            print(f"Cognito client id: {COGNITO_APP_CLIENT_ID}")
-            response = client.sign_up(
-                ClientId=COGNITO_APP_CLIENT_ID,
-                Username=username,
-                Password=password,
-                UserAttributes=[
-                    {
-                        'Name': 'email',
-                        'Value': email
-                    },
-                    {
-                        'Name': 'name',
-                        'Value': name
-                    },
-                    {
-                        'Name': 'custom:lastname',
-                        'Value': lastname
-                    },
-                ],
-            )
-            
-            # Confirm the user (if auto-confirmation is disabled, they must verify via email)
-            client.admin_confirm_sign_up(
-                UserPoolId=COGNITO_USER_POOL_ID,
-                Username=username
-            )
 
-            # Add the user to the specified group
-            client.admin_add_user_to_group(
-                UserPoolId=COGNITO_USER_POOL_ID,
-                Username=username,
-                GroupName=user_group
-            )
-            
-            print(f"User {username} successfully registered as {user_group}")
-            return Response({"message": f"User successfully registered as {user_group}"})
-        
-        except client.exceptions.UsernameExistsException:
-            return Response({"error": "User already exists"}, status=400)
-
-        except Exception as e:
-            print(str(e))
-            return Response({"error": str(e)}, status=500)
-        
-    print("Error, invalid request")
-    return Response({"error": "Invalid request"}, status=400)
+class SignUpView(APIView):
+    permission_classes = [AllowAny]
     
+    def post(self, request):
+        # print("in SignUpView")
+        req = request.data
+        # print(req)
+        # print(f"content type: {request.content_type}")
+        serializer = SignUpSerializer(data=req)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            print(data)
+            email = data["email"]
+            name = data["name"]
+            lastname = data["lastname"]
+            username = data["username"]
+            password = data["password"]
+            
+            try:
+                # print("Running sign_up()")
+                # create user in Cognito
+                response = client.sign_up(
+                    ClientId=COGNITO_APP_CLIENT_ID,
+                    Username=username,
+                    Password=password,
+                    UserAttributes=[
+                        {
+                            'Name': 'email',
+                            'Value': email
+                        },
+                        {
+                            'Name': 'name',
+                            'Value': name
+                        },
+                        {
+                            'Name': 'custom:lastname',
+                            'Value': lastname
+                        },
+                    ],
+                )
+                
+                print(response)
+                
+                # confirm the user (if auto-confirmation is disabled, they must verify via email)
+                confirm = client.admin_confirm_sign_up(
+                    UserPoolId=COGNITO_USER_POOL_ID,
+                    Username=username
+                )
+                
+                # print(confirm)
+                
+                 # Assign user to groups
+                if "groups" in data:
+                    for group in data["groups"]:
+                        try:
+                            client.admin_add_user_to_group(
+                                UserPoolId=COGNITO_USER_POOL_ID,
+                                Username=username,
+                                GroupName=group,
+                            )
+                        except Exception as e:
+                            print(f"Error adding user to {group}: {e}")
+                
+                print(f"User {username} successfully registered")
+                return Response({"message": f"User successfully registered"})
+            
+            except client.exceptions.UsernameExistsException:
+                return Response({"error": "User already exists"}, status=400)
+
+            except Exception as e:
+                print(str(e))
+                return Response({"error": str(e)}, status=500)
+            
+        print(f"Serializer errors: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+
+class SignInView(APIView):
+    permission_classes = [AllowAny]
     
-@csrf_exempt   
-def sign_in(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        print(data)
-        username = data.get("username")
-        password = data.get("password")
-        
-        if not username or not password:
-            return Response({"error": "Missing username or password"}, status=400)
-        
-        try:
-            response = client.initiate_auth(
-                ClientId=COGNITO_APP_CLIENT_ID,
-                AuthFlow="USER_PASSWORD_AUTH",
-                AuthParameters={
-                    "USERNAME": username,
-                    "PASSWORD": password,
-                },
-            )
+    def post(self, request):
+        print("in SignInView")
+        serializer = SignInSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            print(data)
+            username = data["username"]
+            password = data["password"]
             
-            print(f"Successfully signed-in as {username}")
-            return Response({
-                "access_token": response["AuthenticationResult"]["AccessToken"],
-                "id_token": response["AuthenticationResult"]["IdToken"],
-                "refresh_token": response["AuthenticationResult"]["RefreshToken"],
-            })
+            try:
+                # print("Running initiate_auth()")
+                response = client.initiate_auth(
+                    ClientId=COGNITO_APP_CLIENT_ID,
+                    AuthFlow="USER_PASSWORD_AUTH",
+                    AuthParameters={
+                        "USERNAME": username,
+                        "PASSWORD": password,
+                    },
+                )
+                
+                # print(response)
+                
+                id_token = response["AuthenticationResult"]["IdToken"]
+                access_token = response["AuthenticationResult"]["AccessToken"]
+                
+                
+                user_info = client.get_user(AccessToken=access_token)
+                # print(user_info)
+                groups_response = client.admin_list_groups_for_user(
+                    UserPoolId=COGNITO_USER_POOL_ID,
+                    Username=username
+                )
+                groups = [group['GroupName'] for group in groups_response.get('Groups', [])]
+                print(f"Successfully signed in as {user_info["Username"]}")
+                response = Response({"message": "Sign-in successful",
+                                 "id_token": id_token, 
+                                 "access_token": access_token, 
+                                 "username": user_info["Username"], 
+                                 "groups": groups
+                                 }, status=status.HTTP_200_OK,
+                                    content_type="application/json")
+                # print(f"Response data: {response.data}")
+                # print("Content-Type Header:", response.headers.get('Content-Type')) 
+                # print(f"response content_type: {type(response)}")
+                return response
+            except client.exceptions.NotAuthorizedException:
+                print("notauthorizedexception")
+                return Response({"error": "Incorrect username or password"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            except client.exceptions.UserNotFoundException:
+                print("notfoundexception")
+                return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+            except Exception as e:
+                print(str(e))
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-        except client.exceptions.NotAuthorizedException:
-            return Response({"error": "Incorrect username or password"}, status=401)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        except client.exceptions.UserNotFoundException:
-            return Response({"error": "User does not exist"}, status=404)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
-        
-    return Response({"error": "Invalid request"}, status=400)
-        
+''':
+def getTokens(code):
+    encodeData = base64.b64encode(bytes(f"{COGNITO_APP_CLIENT_ID}", "ISO-8859-1")).decode("ascii")
+    
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': f'Basic {encodeData}'
+    }
+    
+    body = {
+        'grant_type': 'authorization_code',
+        'client_id': COGNITO_APP_CLIENT_ID,
+        'code': code,
+        'redirect_uri': REDIRECT_URI
+    }
+    
+    response = requests.post(TOKEN_ENDPOINT, data=body, headers=headers)
+    
+    id_token = response.json()['ide_token']
+    decode_jwt.lambda_handler(id_token)
+'''

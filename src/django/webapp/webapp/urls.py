@@ -25,6 +25,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('media/', include('media.urls')),
     path('accounts/', include('accounts.urls')),
+    path('auth/', include('accounts.urls')),
+    path('', include('races.urls'))
 ]
 
 ##controls paths to apps

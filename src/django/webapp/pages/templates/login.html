@@ -5,13 +5,39 @@
 </head>
 <body>
     <h1>Login Page</h1>
-    <form method="POST">
-        {% csrf_token %}
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br>
+    <form id="signin-form">
+        {% comment %} <label for="username">Username:</label> {% endcomment %}
+        <input type="text" id="username" name="username" placeholder="Username" required><br><br>
+        {% comment %} <label for="password">Password:</label> {% endcomment %}
+        <input type="password" id="password" name="password" placeholder="Password" required><br><br>
         <button type="submit">Login</button>
     </form>
+    <p id="signin-message"></p>
+    <script>
+        document.getElementById("signin-form").onsubmit = async function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const jsonData = Object.fromEntries(formData.entries());
+
+            console.log("Sending data:", jsonData);
+
+            const response = await fetch("/auth/sign-in/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(jsonData)
+            });
+
+            // check if response is received
+            console.log("Response Status:", response.status);
+
+            const result = await response.json();
+            console.log("Response:", result);
+            if (result.id_token) {
+                document.getElementById("signin-message").innerText = "Login successful!";
+            } else {
+                document.getElementById("signin-message").innerText = result.error;
+            }
+        };
+    </script>
 </body>
 </html>

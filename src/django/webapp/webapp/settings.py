@@ -46,9 +46,16 @@ INSTALLED_APPS = [
     'storages',
     'pages',
     'accounts',
+    'races',
+    
+    
+    #oath2
+    'oauth2_provider',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,6 +65,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'accounts.middlewares.CognitoAuthMiddleware',
 ]
+
+# OAuth2 settings
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,  # 1 hour
+}
+
+# Allow frontend access (optional, adjust accordingly)
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'webapp.urls'
 
@@ -157,11 +172,14 @@ DEFAULT_FILE_STORAGE = 'webapp.storages.CarsBucketStorage'
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  
+    'accounts.auth_backends.CognitoJWTAuthentication',
     "django_cognito_jwt.auth.CognitoJSONWebTokenBackend",
 ]
 
 COGNITO_USER_POOL_ID = config('COGNITO_USER_POOL_ID')
 COGNITO_APP_CLIENT_ID = config('COGNITO_APP_CLIENT_ID')
+REDIRECT_URI = config('COGNITO_REDIRECT_URI')
+TOKEN_ENDPOINT = config('COGNITO_TOKEN_ENDPOINT')
 
 COGNITO_JWT_AUTH = {
     "AWS_REGION": AWS_REGION_NAME,
@@ -183,3 +201,28 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],  # No need to manually specify app directories
+        'APP_DIRS': True,  # Ensures Django looks for templates in app directories
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
