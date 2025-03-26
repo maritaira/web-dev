@@ -32,8 +32,11 @@
 
             const result = await response.json();
             console.log("Response:", result);
-            if (result.id_token) {
+            if (result.message) {
                 document.getElementById("signin-message").innerText = "Login successful!";
+                localStorage.setItem('id_token', result.id_token)
+                localStorage.setItem('access_token', result.access_token)
+                localStorage.setItem('refresh_token', result.refresh_token)
             } else {
                 document.getElementById("signin-message").innerText = result.error;
             }

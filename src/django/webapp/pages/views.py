@@ -5,6 +5,10 @@ from django.http import HttpResponse
 import requests
 from media.models import Video, Image
 
+import requests
+from media.models import Video
+from accounts.permissions import IsRaceOwner, IsCarOwner
+
 import boto3
 
 def index(request):
@@ -49,6 +53,14 @@ def login_pg(request):
 
 def create_acc(request):
     return render(request, 'create_acc.html')
+
+def create_race(request):
+    # permission = IsRaceOwner()
+    # if permission.has_permission(request, None):
+    #     return render(request, 'create_race.html')
+    
+    # return redirect('index')
+    return render(request, 'create_race.html')
 
 def all_cars(request):
     return render(request, 'all_cars.html')

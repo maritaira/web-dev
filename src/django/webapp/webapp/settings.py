@@ -172,8 +172,6 @@ DEFAULT_FILE_STORAGE = 'webapp.storages.CarsBucketStorage'
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  
-    'accounts.auth_backends.CognitoJWTAuthentication',
-    "django_cognito_jwt.auth.CognitoJSONWebTokenBackend",
 ]
 
 COGNITO_USER_POOL_ID = config('COGNITO_USER_POOL_ID')
@@ -187,6 +185,7 @@ COGNITO_JWT_AUTH = {
     "APP_CLIENT_ID": COGNITO_APP_CLIENT_ID,
 }
 
+AUTH_USER_MODEL = 'accounts.CognitoUser'
 
 STATICFILES_DIRS = [
     BASE_DIR / "pages/static",  # Resolves to "/Users/avanibhute/Desktop/web-dev/src/django/webapp/pages/static"
@@ -219,10 +218,9 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'accounts.auth_backends.CognitoJWTAuthentication',
     ),
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
+    # "DEFAULT_PERMISSION_CLASSES": [
+    #     "rest_framework.permissions.IsAuthenticated",
+    # ],
 }

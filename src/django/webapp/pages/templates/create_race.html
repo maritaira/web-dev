@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Race</title>
+</head>
+<body>
+    <h2>Create a New Race</h2>
+
+    <form id="createrace-form">
+        <label for="name">Race Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" required><br><br>
+
+        <label for="date">Race Date:</label>
+        <input type="date" id="date" name="date" required><br><br>
+
+        <label for="num_cars">Number of Cars:</label>
+        <input type="number" id="num_cars" name="num_cars" required><br><br>
+
+        <button type="submit">Create Race</button>
+    </form>
+    <p id="createrace-message"></p>
+    <script>
+        document.getElementById("createrace-form").onsubmit = async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const jsonData = Object.fromEntries(formData.entries());
+
+            console.log("Sending data:", jsonData);
+
+            // get the id token from local storage
+            const idToken = localStorage.getItem("id_token");
+
+            if (!idToken) {
+                alert("You must be logged in to create a race.");
+                return;
+            }
+
+            // Create a race request
+            /*
+            const response = await fetch("/races/create-race/", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(jsonData)
+            });
+            */
+
+            const response = await fetch("/races/create-race/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(jsonData)
+            });
+   
+            console.log("Response Status: ", response.status)
+            
+            const result = await response.json();
+            console.log("Response:", result);
+            if (result.message) {
+                document.getElementById("createrace-message").innerText = "Successfully created race!";
+            } else {
+                document.getElementById("createrace-message").innerText = result.error;
+            }
+        };
+    </script>
+</body>
+</html>
