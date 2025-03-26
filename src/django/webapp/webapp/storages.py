@@ -2,7 +2,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 from django.conf import settings
 
 
-class UsersBucketStorage(S3Boto3Storage):
+class CarsBucketStorage(S3Boto3Storage):
     bucket_name = settings.AWS_STORAGE_CARS_BUCKET_NAME
     
     def __init__(self, *args, **kwargs):

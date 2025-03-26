@@ -40,7 +40,7 @@
             }
 
             // Create a race request
-            const response = await fetch("/races/create-race/", {
+            const response = await fetch("/create-race/", {
                 method: "POST",
                 headers: {
                     "Authorization": "Bearer " + idToken,
@@ -56,7 +56,7 @@
             if (result.message) {
                 document.getElementById("createrace-message").innerText = "Successfully created race!";
             } else {
-                document.getElementById("createrace-message").innerText = result.error;
+                document.getElementById("createrace-message").innerText = response;
             }
         };
     </script>

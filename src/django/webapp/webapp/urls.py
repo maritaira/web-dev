@@ -26,7 +26,7 @@ urlpatterns = [
     path('', views.index, name='index'),  # Route for the app's homepage
     path('pages/', include('pages.urls')),
     path('auth/', include('accounts.urls')),
-    path('races/', include('races.urls'))
+    path('', include('races.urls'))
 ]
 
 ##controls paths to apps

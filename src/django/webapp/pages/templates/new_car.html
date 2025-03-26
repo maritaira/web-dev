@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Car</title>
+</head>
+<body>
+    <h2>Add Your Car</h2>
+    
+    <form id="newcar-form" enctype="multipart/form-data">
+        <label for="name">Car Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="images">Upload Images:</label>
+        <input type="file" id="images" name="images" multiple required><br><br>
+
+        <button type="submit">Add Car</button>
+    </form>
+
+    <div id="response-message"></div>
+
+    <script>
+        document.getElementById('newcar-form').onsubmit = async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            const images = document.querySelector('input[type="file"]').files;
+            for (const image of images) {
+                formData.append('images', image);
+            }
+
+            console.log("Sending data:", formData);
+
+            const token = localStorage.getItem('id_token');
+
+            if (!token) {
+                alert("You must be logged in to add a new car.");
+                return;
+            }
+
+            // Sending the POST request using Fetch API
+            const response = await fetch('/add-car/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            })
+
+            console.log("Response Status: ", response.status)
+            
+            const result = await response.json();
+            console.log("Response:", result);
+            if (result.message) {
+                document.getElementById("respond-message").innerText = "Successfully added car and images!";
+            } else {
+                document.getElementById("respond-message").innerText = response;
+            }
+        };
+    </script>
+</body>
+</html>

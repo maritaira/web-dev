@@ -36,6 +36,9 @@ def create_race(request):
     # return redirect('index')
     return render(request, 'create_race.html')
 
+def new_car(request):
+    return render(request, 'new_car.html')
+
 def all_cars(request):
     return render(request, 'all_cars.html')
 def upcoming_races(request):

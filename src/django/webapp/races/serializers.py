@@ -10,7 +10,8 @@ class RaceSerializer(serializers.ModelSerializer):
 class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = "__all__"
+        fields = ['name']
+        read_only_fields = ["owner", "images_folder"]
         
 class RaceParticipantSerializer(serializers.ModelSerializer):
     car_name = serializers.ReadOnlyField(source='car.name')

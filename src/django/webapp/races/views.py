@@ -8,6 +8,9 @@ from django.shortcuts import get_object_or_404
 from .models import Race, Car, RaceParticipant
 from .serializers import RaceSerializer, CarSerializer, RaceParticipantSerializer
 from accounts.permissions import IsCarOwner, IsRaceOwner
+from media.views import ImageViewSet
+from media.models import Image
+from media.serializers import ImageSerializer
 from webapp.storages import RacesBucketStorage
 import uuid
 import json
@@ -19,46 +22,16 @@ class CreateRaceView(generics.CreateAPIView):
     # permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
-        # try:
-        #     print("In perform_create for CreateRace")
-        #     print(f"race data: {request.data}")
-        #     return Response({"message": "success"}, status=status.HTTP_201_CREATED)
-        # except Exception as e:
-        #     print("Error:", str(e))
-        #     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        print("In perform_create for CreateRace")
+        # print("In perform_create for CreateRace")
         print(f"Checking user: {self.request.user.username}")
-        # race_data = {
-        #     "name": request.data.get("name"),
-        #     "location": request.data.get("location"),
-        #     "date": request.data.get("date"),
-        #     "num_cars": request.data.get("num_cars"),
-        # }
         print(f"race data: {self.request.data}")
-        # return Response({"message": "success"})
         
         serializer = RaceSerializer(data=self.request.data)
-        print("serializer created successfully")
         if serializer.is_valid():
-            print(f"Saving serializer with owner {self.request.user}")
+            # print(f"Saving serializer with owner {self.request.user}")
             race = serializer.save(owner=self.request.user)
-            print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
+            # print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
         
-        # # create s3 directory in races bucket
-        # race_storage = RacesBucketStorage()
-        # race_directory = f"{race.name}/"
-
-        # # add metadata JSON file in the second bucket
-        # metadata = {
-        #     "name": race.name,
-        #     "location": race.location,
-        #     "date": str(race.date),
-        #     "num_cars": str(race.num_cars),
-        #     "owner": race.owner.username
-        # }
-        # race_storage.save(race_directory + "metadata.json", ContentFile(json.dumps(metadata)))
-        # print("Created directory in S3 bucket")
             return Response({
                 "message": "Race created successfully",
                 "race_id": race.id, 
@@ -71,6 +44,48 @@ class CreateRaceView(generics.CreateAPIView):
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
         
+
+class AddCarView(generics.CreateAPIView):
+    serializer_class = CarSerializer
+    permission_classes = [IsCarOwner]
+    
+    def perform_create(self, serializer):
+        print("In perform_create for AddCar")
+        print(f"Checking user: {self.request.user.username}")
+        print(f"Car data: {self.request.data}")
+        
+        serializer = CarSerializer(data=self.request.data)
+        if serializer.is_valid():
+            # print(f"Saving serializer with owner {self.request.user}")
+            name = serializer.validated_data['name']
+            images_folder = f"{self.request.user.username}/{name}/images"
+            car = serializer.save(owner=self.request.user, images_folder=images_folder)
+            print("Car serializer saved")
+            
+            
+            image_files = self.request.FILES.getlist('images')
+            image_instances = []
+            
+            for image in image_files:
+                image_instance = Image.objects.create(car=car, image=image)
+                image_instances.append(image_instance)
+                
+            image_serializer = ImageSerializer(image_instances,  many=True)
+            response = Response({
+                    "message": "Images uploaded successfully",
+                    "data": image_serializer.data
+                    }, status=status.HTTP_201_CREATED)
+            
+            if response.status_code != status.HTTP_201_CREATED:
+                print("Image upload failed")
+                return Response({'status': 'error', 'message': 'Image upload failed'}, status=status.HTTP_400_BAD_REQUEST)
+
+            print("Car and images successfully added")
+            return Response({'status': 'success', 'message': 'Car and images added successfully.'}, status=status.HTTP_201_CREATED)
+
+        else:
+            return Response({'status': 'error', 'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class JoinRaceView(generics.CreateAPIView):
     serializer_class = RaceParticipantSerializer

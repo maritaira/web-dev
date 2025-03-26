@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('car_name', models.CharField(max_length=100)),
-                ('image', models.ImageField(storage=webapp.storages.UsersBucketStorage, upload_to='')),
+                ('image', models.ImageField(storage=webapp.storages.CarsBucketStorage, upload_to='')),
                 ('upload_time', models.DateTimeField(auto_now_add=True)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to=settings.AUTH_USER_MODEL)),
             ],

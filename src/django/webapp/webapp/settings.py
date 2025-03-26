@@ -155,7 +155,6 @@ AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = config('AWS_REGION_NAME')
 AWS_STORAGE_CARS_BUCKET_NAME = config('S3_CARS_BUCKET_NAME')
 AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
-# DEFAULT_FILE_STORAGE = "webapp.storages.UsersBucketStorage"
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  
