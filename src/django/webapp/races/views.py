@@ -14,27 +14,35 @@ import json
 
 class CreateRaceView(generics.CreateAPIView):
     serializer_class = RaceSerializer
-    # permission_classes = [IsRaceOwner]
+    permission_classes = [IsRaceOwner]
     queryset = Race.objects.all()
-    permission_classes = [AllowAny]
+    # permission_classes = [AllowAny]
 
-    def perform_create(self, request, serializer):
+    def perform_create(self, serializer):
+        # try:
+        #     print("In perform_create for CreateRace")
+        #     print(f"race data: {request.data}")
+        #     return Response({"message": "success"}, status=status.HTTP_201_CREATED)
+        # except Exception as e:
+        #     print("Error:", str(e))
+        #     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         print("In perform_create for CreateRace")
-        # print(f"Checking user: {request.user.username}")
+        print(f"Checking user: {self.request.user.username}")
         # race_data = {
         #     "name": request.data.get("name"),
         #     "location": request.data.get("location"),
         #     "date": request.data.get("date"),
         #     "num_cars": request.data.get("num_cars"),
         # }
-        print(f"race data: {request.data}")
-        return Response({"message": "success"})
-        '''
-        serializer = RaceSerializer(data=request.data)
+        print(f"race data: {self.request.data}")
+        # return Response({"message": "success"})
+        
+        serializer = RaceSerializer(data=self.request.data)
         print("serializer created successfully")
         if serializer.is_valid():
-            print(f"Saving serializer with owner {request.user}")
-            race = serializer.save(owner=request.user)
+            print(f"Saving serializer with owner {self.request.user}")
+            race = serializer.save(owner=self.request.user)
             print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
         
         # # create s3 directory in races bucket
@@ -62,7 +70,7 @@ class CreateRaceView(generics.CreateAPIView):
             "message": "Error creating race.",
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-        '''
+        
 
 class JoinRaceView(generics.CreateAPIView):
     serializer_class = RaceParticipantSerializer
