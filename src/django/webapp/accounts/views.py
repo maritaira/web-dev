@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from .serializers import SignInSerializer, SignUpSerializer
+from .models import CognitoUser
 from django.views.decorators.csrf import csrf_exempt
 from webapp.settings import COGNITO_APP_CLIENT_ID, COGNITO_USER_POOL_ID, AWS_REGION_NAME, REDIRECT_URI, TOKEN_ENDPOINT
 import requests
@@ -41,22 +42,16 @@ class SignUpView(APIView):
                     Username=username,
                     Password=password,
                     UserAttributes=[
-                        {
-                            'Name': 'email',
-                            'Value': email
-                        },
-                        {
-                            'Name': 'name',
-                            'Value': name
-                        },
-                        {
-                            'Name': 'custom:lastname',
-                            'Value': lastname
-                        },
+                        {'Name': 'email', 'Value': email},
+                        {'Name': 'name', 'Value': name},
+                        {'Name': 'custom:lastname', 'Value': lastname},
                     ],
                 )
                 
                 print(response)
+                
+                sub = response.get("UserSub")
+                print(f"sub: {sub}")
                 
                 # confirm the user (if auto-confirmation is disabled, they must verify via email)
                 confirm = client.admin_confirm_sign_up(
@@ -67,8 +62,10 @@ class SignUpView(APIView):
                 # print(confirm)
                 
                  # Assign user to groups
+                groups = []
                 if "groups" in data:
                     for group in data["groups"]:
+                        groups.append(group)
                         try:
                             client.admin_add_user_to_group(
                                 UserPoolId=COGNITO_USER_POOL_ID,
@@ -77,8 +74,20 @@ class SignUpView(APIView):
                             )
                         except Exception as e:
                             print(f"Error adding user to {group}: {e}")
+                            
+                print(f"Groups: {groups}")
                 
-                print(f"User {username} successfully registered")
+                # Create the CognitoUser object in the database
+                CognitoUser.objects.create(
+                    username=username,
+                    sub=sub,
+                    email=email,
+                    name=name,
+                    lastname=lastname,
+                    groups=groups
+                )
+                
+                print(f"User {username} successfully registered as {groups}")
                 return Response({"message": f"User successfully registered"})
             
             except client.exceptions.UsernameExistsException:
@@ -119,7 +128,7 @@ class SignInView(APIView):
                 
                 id_token = response["AuthenticationResult"]["IdToken"]
                 access_token = response["AuthenticationResult"]["AccessToken"]
-                
+                refresh_token = response["AuthenticationResult"]["RefreshToken"]
                 
                 user_info = client.get_user(AccessToken=access_token)
                 # print(user_info)
@@ -132,6 +141,7 @@ class SignInView(APIView):
                 response = Response({"message": "Sign-in successful",
                                  "id_token": id_token, 
                                  "access_token": access_token, 
+                                 "refresh_token": refresh_token,
                                  "username": user_info["Username"], 
                                  "groups": groups
                                  }, status=status.HTTP_200_OK,

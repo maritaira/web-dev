@@ -159,8 +159,6 @@ AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  
-    'accounts.auth_backends.CognitoJWTAuthentication',
-    "django_cognito_jwt.auth.CognitoJSONWebTokenBackend",
 ]
 
 COGNITO_USER_POOL_ID = config('COGNITO_USER_POOL_ID')
@@ -174,6 +172,7 @@ COGNITO_JWT_AUTH = {
     "APP_CLIENT_ID": COGNITO_APP_CLIENT_ID,
 }
 
+AUTH_USER_MODEL = 'accounts.CognitoUser'
 
 STORAGES = {
 
@@ -209,10 +208,9 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'accounts.auth_backends.CognitoJWTAuthentication',
     ),
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
+    # "DEFAULT_PERMISSION_CLASSES": [
+    #     "rest_framework.permissions.IsAuthenticated",
+    # ],
 }

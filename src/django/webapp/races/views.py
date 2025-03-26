@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.core.files.base import ContentFile
+from django.utils.crypto import get_random_string
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -13,30 +14,55 @@ import json
 
 class CreateRaceView(generics.CreateAPIView):
     serializer_class = RaceSerializer
-    # permission_classes = [IsAuthenticated, IsRaceOwner]
+    # permission_classes = [IsRaceOwner]
+    queryset = Race.objects.all()
     permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
+    def perform_create(self, request, serializer):
         print("In perform_create for CreateRace")
-        user = self.request.user
-        race = serializer.save(owner=user, join_code=uuid.uuid4())
-        print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
+        # print(f"Checking user: {request.user.username}")
+        # race_data = {
+        #     "name": request.data.get("name"),
+        #     "location": request.data.get("location"),
+        #     "date": request.data.get("date"),
+        #     "num_cars": request.data.get("num_cars"),
+        # }
+        print(f"race data: {request.data}")
+        return Response({"message": "success"})
+        '''
+        serializer = RaceSerializer(data=request.data)
+        print("serializer created successfully")
+        if serializer.is_valid():
+            print(f"Saving serializer with owner {request.user}")
+            race = serializer.save(owner=request.user)
+            print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
         
-        # create s3 directory in races bucket
-        race_storage = RacesBucketStorage()
-        race_directory = f"{race.name}/"
+        # # create s3 directory in races bucket
+        # race_storage = RacesBucketStorage()
+        # race_directory = f"{race.name}/"
 
-        # add metadata JSON file in the second bucket
-        metadata = {
-            "name": race.name,
-            "location": race.location,
-            "date": str(race.date),
-            "num_cars": str(race.num_cars),
-            "owner": race.owner.username
-        }
-        race_storage.save(race_directory + "metadata.json", ContentFile(json.dumps(metadata)))
-        print("Created directory in S3 bucket")
-        return Response({"race_id": race.id, "join_code": race.join_code}, status=status.HTTP_201_CREATED)
+        # # add metadata JSON file in the second bucket
+        # metadata = {
+        #     "name": race.name,
+        #     "location": race.location,
+        #     "date": str(race.date),
+        #     "num_cars": str(race.num_cars),
+        #     "owner": race.owner.username
+        # }
+        # race_storage.save(race_directory + "metadata.json", ContentFile(json.dumps(metadata)))
+        # print("Created directory in S3 bucket")
+            return Response({
+                "message": "Race created successfully",
+                "race_id": race.id, 
+                "join_code": race.join_code,
+                "race": serializer.data
+                }, status=status.HTTP_201_CREATED)
+        print("Serializer not valid")    
+        return Response({
+            "message": "Error creating race.",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        '''
 
 class JoinRaceView(generics.CreateAPIView):
     serializer_class = RaceParticipantSerializer
@@ -78,7 +104,7 @@ class ListCarsInRaceView(generics.ListAPIView):
     
 class ListRacesUserJoinedView(generics.ListAPIView):
     serializer_class = RaceSerializer
-    permission_classes = [IsAuthenticated, IsCarOwner]
+    permission_classes = [IsCarOwner]
 
     def get_queryset(self):
         user_cars = self.request.user.cars.all()  # Get all cars owned by the user
