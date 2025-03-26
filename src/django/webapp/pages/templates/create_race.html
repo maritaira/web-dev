@@ -54,6 +54,7 @@
             const response = await fetch("/races/create-race/", {
                 method: "POST",
                 headers: {
+                    "Authorization": "Bearer " + idToken, 
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(jsonData)

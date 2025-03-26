@@ -22,7 +22,7 @@ from django.contrib import admin
 urlpatterns = [
     path('', views.index, name='index'),  # Route for the app's homepage
     path('pages/', include('pages.urls')),
-    path('admin/', admin.site.urls),
+    ##path('admin/', admin.site.urls),
     path('media/', include('media.urls')),
     path('accounts/', include('accounts.urls')),
     path('auth/', include('accounts.urls')),

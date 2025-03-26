@@ -4,10 +4,8 @@ from .forms import ImageUploadForm
 from django.http import HttpResponse
 import requests
 from media.models import Video, Image
-
-import requests
-from media.models import Video
 from accounts.permissions import IsRaceOwner, IsCarOwner
+from races.models import Car
 
 import boto3
 
@@ -63,7 +61,10 @@ def create_race(request):
     return render(request, 'create_race.html')
 
 def all_cars(request):
-    return render(request, 'all_cars.html')
+    user = request.user
+    cars = Car.objects.filter(owner=user)  # Fetch cars owned by the logged-in user
+
+    return render(request, "all_cars.html", {"cars": cars})
 
 
 def upcoming_races(request):

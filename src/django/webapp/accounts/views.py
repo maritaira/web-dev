@@ -164,24 +164,23 @@ class SignInView(APIView):
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-''':
-def getTokens(code):
-    encodeData = base64.b64encode(bytes(f"{COGNITO_APP_CLIENT_ID}", "ISO-8859-1")).decode("ascii")
-    
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': f'Basic {encodeData}'
-    }
-    
-    body = {
-        'grant_type': 'authorization_code',
-        'client_id': COGNITO_APP_CLIENT_ID,
-        'code': code,
-        'redirect_uri': REDIRECT_URI
-    }
-    
-    response = requests.post(TOKEN_ENDPOINT, data=body, headers=headers)
-    
-    id_token = response.json()['ide_token']
-    decode_jwt.lambda_handler(id_token)
-'''
+
+    def getTokens(code):
+        encodeData = base64.b64encode(bytes(f"{COGNITO_APP_CLIENT_ID}", "ISO-8859-1")).decode("ascii")
+        
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': f'Basic {encodeData}'
+        }
+        
+        body = {
+            'grant_type': 'authorization_code',
+            'client_id': COGNITO_APP_CLIENT_ID,
+            'code': code,
+            'redirect_uri': REDIRECT_URI
+        }
+        
+        response = requests.post(TOKEN_ENDPOINT, data=body, headers=headers)
+        
+        id_token = response.json()['ide_token']
+        decode_jwt.lambda_handler(id_token)
