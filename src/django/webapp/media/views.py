@@ -24,18 +24,21 @@ class ImageViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def create(self, request, *args, **kwargs):
-        car_name = request.data.get('car_name')
+        car = request.data.get('car')
         images = request.FILES.getlist('images')
         
         if not images:
             return Response({'error': 'No files provided.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not car_name:
-            return Response({'error': 'car_name required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not car:
+            return Response({'error': 'Car required.'}, status=status.HTTP_400_BAD_REQUEST)
         
         uploads = []
         try:
             for image in images:
-                serializer = self.get_serializer(data={'car_name': car_name, 'image': image})
+                serializer = self.get_serializer(data={'car': car,
+                                                       'image': image
+                                                       })
+                
                 serializer.is_valid(raise_exception=True)
                 self.perform_create(serializer)
                 uploads.append(serializer.data)

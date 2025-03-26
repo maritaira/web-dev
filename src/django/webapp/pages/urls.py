@@ -13,6 +13,7 @@ urlpatterns = [
     path('videos/', views.all_videos, name='all_videos'),
     path('create_acc/', views.create_acc, name='create_acc'),
     path('create_race/', views.create_race, name='create_race'),
+    path('new_car/', views.new_car, name='new_car'),
     path('all_cars/', views.all_cars, name='all_cars'),
     path('upcoming_races/', views.upcoming_races, name='upcoming_races'),
     path('display_images/', views.display_images, name="display_images"),

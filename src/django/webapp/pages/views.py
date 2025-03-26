@@ -60,6 +60,9 @@ def create_race(request):
     # return redirect('index')
     return render(request, 'create_race.html')
 
+def new_car(request):
+    return render(request, 'new_car.html')
+
 def all_cars(request):
     user = request.user
     cars = Car.objects.filter(owner=user)  # Fetch cars owned by the logged-in user

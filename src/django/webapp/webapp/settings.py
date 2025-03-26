@@ -55,7 +55,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -167,8 +167,6 @@ AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = config('AWS_REGION_NAME')
 AWS_STORAGE_CARS_BUCKET_NAME = config('S3_CARS_BUCKET_NAME')
 AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
-DEFAULT_FILE_STORAGE = 'webapp.storages.CarsBucketStorage'
-
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  

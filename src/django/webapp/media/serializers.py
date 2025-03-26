@@ -7,7 +7,7 @@ class ImageSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     class Meta:
         model = Image
-        fields = [ 'car_name', 'image', 'image_url', 'upload_time']
+        fields = ['car', 'image', 'image_url', 'upload_time']
         
     def get_image_url(self, obj):
         print(f"image path: {obj.image.name}")

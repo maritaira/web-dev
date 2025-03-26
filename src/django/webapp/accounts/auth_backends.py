@@ -58,7 +58,7 @@ class CognitoJWTAuthentication(BaseBackend):
                 user = CognitoUser.objects.get(sub=sub)
                 print(f"Authenticated CognitoUser: {user.username}")
                 print(user)
-                return user
+                return user, None
 
             except CognitoUser.DoesNotExist:
                 print(f"No CognitoUser found for sub: {sub}")
