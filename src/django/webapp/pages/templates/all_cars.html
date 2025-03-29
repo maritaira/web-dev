@@ -1,37 +1,98 @@
 {% extends 'base.html' %}
-
-{% block title %}My Cars - Dashboard{% endblock %}
+{% load custom_filters %}
 
 {% block content %}
-<h1>My Cars</h1>
-<p>This is the main cars dashboard area.</p>
+<style>
+  .container-fluid {
+      height: 100vh; /* Full height of the viewport */
+      padding: 0;
+  }
+  html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent any scrolling */
+    }
+  /* Fix the accordion to the top of the page */
+  .accordion-container {
+      position: fixed; /* Fix the accordion in place */
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100vh; /* Full height of the viewport */
+      overflow-y: auto; /* Allow vertical scrolling */
+      padding-top: 60px; /* Space from the top for content */
+      background-color: #fff; /* Optional: White background for contrast */
+      z-index: 999; /* Keep the accordion on top */
+  }
 
-<div id="cars-list">
-    {% for car in cars %}
-    <div class="collapsible">
-        <button type="button" class="collapsible-btn">{{ car.name }}</button>
-        <div class="content">
-            <p><img src="https://via.placeholder.com/150" alt="Car Image" class="car-image"></p>
-            <button class="delete-btn">Delete</button>
-            <button class="join-race-btn">Join Race</button>
-            <input type="text" placeholder="Enter Race Code">
-            <button class="delete-pictures-btn">Delete Pictures</button>
+  .accordion {
+      width: 90%; /* Make accordion fill the width */
+      max-width: 80%; /* Prevent overflow beyond the screen width */
+      overflow-x: hidden; /* Prevent horizontal scroll */
+      box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+  }
+
+  .accordion-item {
+      width: 100%;
+      margin-bottom: 10px;
+      border: none;
+  }
+
+  .accordion-button {
+      width: 100%; /* Make button width stretch across */
+      text-align: left; /* Align text left */
+  }
+
+  .accordion-body {
+      max-height: 500px; /* Limit height if needed */
+      overflow-y: auto; /* Allow scrolling if content overflows */
+  }
+
+  /* Optional: Adjust images to fit within the container */
+  .img-fluid {
+      max-width: 30%; /* Ensure images fit within the container */
+      height: auto;
+  }
+
+  /* Responsive for smaller screens */
+  @media (max-width: 200px) {
+      .accordion-button {
+          font-size: 15px; /* Adjust font size for small screens */
+      }
+
+      .accordion-body {
+          max-height: 150px; /* Limit height for mobile */
+      }
+  }
+</style>
+<div class="container">
+    <!-- Welcome Message -->
+    <h2 class="mt-3">Hello {{ username }}!</h2>
+    <h4 class="text-muted">My Cars</h4>
+
+    <!-- Accordion for Cars -->
+    <div class="accordion mt-3" id="carAccordion">
+      {% for car in cars %}
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="heading-{{ car.id }}">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ car.id }}" aria-expanded="false" aria-controls="collapse-{{ car.id }}">
+              {{ car.name }}
+            </button>
+          </h2>
+          <div id="collapse-{{ car.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ car.id }}" data-bs-parent="#carAccordion">
+            <div class="accordion-body">
+              {% if car_images|get_item:car.name %}
+                {% for image_url in car_images|get_item:car.name %}
+                    <img src="{{ image_url }}" alt="{{ car.name }} Image" class="img-fluid mb-2" />
+                {% endfor %}
+              {% else %}
+                <p>No images available for this car.</p>
+              {% endif %}
+            </div>
+          </div>
         </div>
+      {% endfor %}
     </div>
-    {% endfor %}
 </div>
-
-<script>
-    document.querySelectorAll('.collapsible-btn').forEach((button) => {
-        button.addEventListener('click', function () {
-            this.classList.toggle('active');
-            let content = this.nextElementSibling;
-            if (content.style.display === 'block') {
-                content.style.display = 'none';
-            } else {
-                content.style.display = 'block';
-            }
-        });
-    });
-</script>
 {% endblock %}

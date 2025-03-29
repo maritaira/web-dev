@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from cryptography.hazmat.primitives import serialization
 from accounts.models import CognitoUser
 from webapp.settings import AWS_REGION_NAME, COGNITO_USER_POOL_ID, COGNITO_APP_CLIENT_ID
+import jwt
 
 COGNITO_ISSUER = f"https://cognito-idp.{AWS_REGION_NAME}.amazonaws.com/{COGNITO_USER_POOL_ID}"
 COGNITO_JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
@@ -12,6 +13,7 @@ COGNITO_JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 
 def get_cognito_user(request):
     token = request.headers.get("Authorization", "").split("Bearer ")[-1]
+    print(token)
     if not token:
         print("No token found")
         return None

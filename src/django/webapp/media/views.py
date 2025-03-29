@@ -8,43 +8,111 @@ from .models import Image, Video
 from .serializers import ImageSerializer, VideoSerializer
 from webapp.storages import RacesBucketStorage
 from rest_framework.decorators import api_view
+from races.models import Car
 
 # Image ViewSet
 class ImageViewSet(ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
     parser_classes = (MultiPartParser, FormParser)
-    
+
     def list(self, request):
-        car_name = request.query_params.get("car_name")
-        if not car_name:
-            return Response({"error": "car_name required."}, status=status.HTTP_400_BAD_REQUEST)
-        queryset = Image.objects.filter(car_name=car_name)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
+        username = request.query_params.get("username")
+        if not username:
+            return Response({"error": "username required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if sync query parameter exists, if not sync by default
+        if request.GET.get("sync", None):
+            self.sync_images_from_s3(username)
+
+        # Fetch the list of car names for the given user
+        car_names = self.get_car_names_for_user(username)
+        
+        return Response({"car_names": car_names}, status=status.HTTP_200_OK)
+
     def create(self, request, *args, **kwargs):
-        car = request.data.get('car')
+        car_name = request.data.get('car_name')
         images = request.FILES.getlist('images')
-        
+        username = request.data.get('username')
+
         if not images:
-            return Response({'error': 'No files provided.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not car:
-            return Response({'error': 'Car required.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'No images provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not car_name or not username:
+            return Response({'error': 'Car name and username are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Find the car object by the car_name and username
+        try:
+            car = Car.objects.get(name=car_name, owner__username=username)
+        except Car.DoesNotExist:
+            return Response({'error': 'Car not found for the given username.'}, status=status.HTTP_404_NOT_FOUND)
+
         uploads = []
         try:
             for image in images:
-                serializer = self.get_serializer(data={'car': car,
-                                                       'image': image
-                                                       })
-                
+                # Store image in the database under the specific car
+                serializer = self.get_serializer(data={'car': car, 'image': image})
                 serializer.is_valid(raise_exception=True)
                 self.perform_create(serializer)
                 uploads.append(serializer.data)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(uploads, status=status.HTTP_201_CREATED)
+
+
+    def sync_images_from_s3(self, username):
+        print(f"Syncing images from S3 for user: {username}...")
+        race_bucket = RacesBucketStorage()
+
+        # List directories for the user's cars (subfolders)
+        car_folders = race_bucket.listdir(f"{username}/")[0]  # User's folder is the parent directory
+        print(f"Car folders found in S3: {car_folders}")
+
+        # Loop through the car folders, get images, and sync to the database
+        for car_name in car_folders:
+            car_subdirectory = f"{username}/{car_name}/"
+            image_files = race_bucket.listdir(car_subdirectory)[1]  # Get files in the car folder
+            
+            for image_file in image_files:
+                if image_file.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    image_path = f"{car_subdirectory}{image_file}"
+
+                    # Check if the image already exists in the database, otherwise create it
+                    if not Image.objects.filter(car_name=car_name, username=username, image=image_path).exists():
+                        print(f"New image found for car {car_name}: {image_file}")
+                        new_image = Image.objects.create(
+                            car_name=car_name,
+                            username=username,
+                            image=image_path
+                        )
+                        print(f"Image created in DB: {new_image}")
+
+    def get_car_names_for_user(self, username):
+        # This will retrieve all car names for a given user
+        car_names = Image.objects.filter(username=username).values_list('car_name', flat=True).distinct()
+        return list(car_names)
+
+
+# API Endpoints for Syncing and Listing Images
+@api_view(['GET'])
+def sync_images(request):
+    print("Manually syncing images from S3...")
+    username = request.GET.get("username")
+    if not username:
+        return Response({"error": "username required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    viewset = ImageViewSet()
+    viewset.sync_images_from_s3(username)
+    return Response({"message": "Images synced successfully."})
+
+
+@api_view(['GET'])
+def get_images(request):
+    car_name = request.GET.get('car_name', '')
+    images = Image.objects.filter(car_name__icontains=car_name) if car_name else Image.objects.all()
+    image_data = [{'car_name': image.car_name, 'image_url': image.image.url} for image in images]
+    return Response(image_data)
+
 
 # Video ViewSet
 class VideoViewSet(ModelViewSet):

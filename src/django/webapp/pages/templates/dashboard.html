@@ -25,5 +25,19 @@
         <h3>Uploaded Image:</h3>
         <img src="{{ image.image.url }}" alt="Uploaded Image" />
     {% endif %}
-    
+
+    <!-- Add Car and Join Race Section -->
+    <div class="mt-4">
+        <!-- Add Car Button -->
+        <a href="{% url 'pages:new_car' %}">
+            <button type="button" class="btn btn-primary">Add Car</button>
+        </a>
+        
+        <!-- Join Race Section -->
+        <div class="mt-3">
+            <label for="race_code">Race Code:</label>
+            <input type="text" id="race_code" placeholder="Enter Race Code">
+            <button type="button" class="btn btn-success">Join Race</button>
+        </div>
+    </div>
 {% endblock %}

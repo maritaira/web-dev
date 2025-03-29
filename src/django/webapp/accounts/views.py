@@ -138,6 +138,7 @@ class SignInView(APIView):
                 )
                 groups = [group['GroupName'] for group in groups_response.get('Groups', [])]
                 print(f"Successfully signed in as {user_info["Username"]}")
+                request.session['username'] = user_info["Username"]
                 response = Response({"message": "Sign-in successful",
                                  "id_token": id_token, 
                                  "access_token": access_token, 

@@ -1,13 +1,21 @@
 from django.shortcuts import render, redirect
 from .forms import ImageUploadForm
 # Create your views here.
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import requests
 from media.models import Video, Image
-from accounts.permissions import IsRaceOwner, IsCarOwner
 from races.models import Car
-
+import requests
 import boto3
+from accounts.middlewares import get_cognito_user
+from django.contrib.auth.decorators import login_required
+from webapp import settings
+from django import template
+
+
+
+#S3_CAR_BUCKET= settings.AWS_STORAGE_CARS_BUCKET_NAME
+s3_client=boto3.client("s3")
 
 def index(request):
     return HttpResponse("Hello, world. You're at the pages view.")
@@ -43,8 +51,6 @@ def all_videos(request):
     return render(request, 'all_videos.html', context)
 
 
-def view_video(request):
-    return
 
 def login_pg(request):
     return render(request, 'login.html')
@@ -63,15 +69,7 @@ def create_race(request):
 def new_car(request):
     return render(request, 'new_car.html')
 
-def all_cars(request):
-    user = request.user
-    cars = Car.objects.filter(owner=user)  # Fetch cars owned by the logged-in user
 
-    return render(request, "all_cars.html", {"cars": cars})
-
-
-def upcoming_races(request):
-    return render (request, 'upcoming_races.html')
 
 
 
@@ -180,3 +178,61 @@ def upload_image(request):
             return render(request, "image_upload.html", {"error": f"Error connecting to backend: {str(e)}"})
     # print("default return line")
     return render(request, "image_upload.html")
+
+def get_s3_images(username):
+    s3 = boto3.client('s3')
+    bucket_name = settings.AWS_STORAGE_CARS_BUCKET_NAME
+    prefix = f'cars/{username}/'  # Assuming the images are stored under the username folder
+    
+    try:
+        response = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+        images = []
+        
+        for obj in response.get('Contents', []):
+            images.append(obj['Key'])  # This returns the file key for each image
+        
+        return images
+    except NoCredentialsError:
+        return None
+
+# def all_cars_view(request):
+#     # Retrieve the username from the session
+#     username = request.session.get('username')
+#     if not username:
+#         return JsonResponse({"error": "User not authenticated"}, status=401)
+    
+#     # Use the username to get the images from S3
+#     images = get_s3_images(username)
+    
+#     if images is None:
+#         return JsonResponse({"error": "Could not retrieve images from S3"}, status=500)
+    
+#     # Assuming the images are URLs or S3 paths that can be directly used
+#     # Prepare the context to render in the template
+#     context = {
+#         'username': username,
+#         'images': images
+#     }
+
+#     # Render your template with the images data
+#     return render(request, 'all_cars.html', context)
+
+   # Custom filter functi
+def all_cars(request):
+    username = request.session.get('username')
+    cars = Car.objects.filter(owner__username=username)
+
+    # Get images for each car
+    car_images = {}
+    print(car_images)
+    for car in cars:
+        images = Image.objects.filter(car=car)
+        print(car_images)
+
+        #car_images[car.name] = car.images.all()
+        car_images[car.name] = [image.image.url for image in images]  # Storing the image URLs
+
+        print(car_images[car.name])
+
+
+    return render(request, 'all_cars.html', {'username': username, 'cars': cars, 'car_images': car_images})
