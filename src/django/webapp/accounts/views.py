@@ -5,7 +5,7 @@ from rest_framework import status
 from .serializers import SignInSerializer, SignUpSerializer
 from .models import CognitoUser
 from django.views.decorators.csrf import csrf_exempt
-from webapp.settings import COGNITO_APP_CLIENT_ID, COGNITO_USER_POOL_ID, AWS_REGION_NAME, REDIRECT_URI, TOKEN_ENDPOINT
+from webapp.settings import COGNITO_APP_CLIENT_ID, COGNITO_USER_POOL_ID, AWS_REGION_NAME, REDIRECT_URI, TOKEN_ENDPOINT, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 import requests
 import boto3
 import json
@@ -13,7 +13,7 @@ import base64
 
 
 # initializing AWS Cognito client
-client = boto3.client("cognito-idp", region_name=AWS_REGION_NAME)
+client = boto3.client("cognito-idp", aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=AWS_REGION_NAME)
 
 
 class SignUpView(APIView):
