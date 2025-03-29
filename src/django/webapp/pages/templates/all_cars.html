@@ -114,8 +114,8 @@
                         <button class="btn btn-primary" >Add Car</button>
                       </div>
                       <div class="join-race-group">
-                        <input type="text" class="form-control" placeholder="Join Code">
-                        <button class="btn btn-success">Join Race</button>
+                        <input type="text" class="form-control join-code" placeholder="Join Code">
+                        <button class="btn btn-success join-race-btn" data-car-id="{{ car.id }}">Join Race</button>
                       </div>
                       <button class="btn btn-danger">Delete Car</button>
                     </div>
@@ -130,4 +130,57 @@
       {% endfor %}
     </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const joinRaceButtons = document.querySelectorAll('.join-race-btn');
+
+    joinRaceButtons.forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const carId = this.getAttribute('data-car-id');
+        const joinCodeInput = this.parentElement.querySelector('.join-code');
+        const joinCode = joinCodeInput.value;
+
+        if (!joinCode) {
+          alert("Please enter a join code.");
+          return;
+        }
+
+        console.log("Sending car_id", carId);
+        console.log("Sending join_code", joinCode)
+
+        // get the id token from local storage
+        const idToken = localStorage.getItem("id_token");
+
+        if (!idToken) {
+            alert("You must be logged in to create a race.");
+            return;
+        }
+
+        fetch('/join-race/', {
+          method: 'POST',
+          headers: {
+            "Authorization": "Bearer " + idToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            'car_id': carId,
+            'join_code': joinCode
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Joined race successfully!');
+          } else {
+            alert(data.error || 'Failed to join the race.');
+          }
+        })
+        .catch(err => console.error('Error:', err));
+      });
+    });
+  });
+</script>
 {% endblock %}

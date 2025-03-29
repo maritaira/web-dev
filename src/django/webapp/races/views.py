@@ -107,7 +107,10 @@ class JoinRaceView(generics.CreateAPIView):
             return Response({"error": f"Car {car.name} is already in race {race.name}"}, status=status.HTTP_400_BAD_REQUEST)
 
         RaceParticipant.objects.create(race=race, car_owner=user, car=car)
-        return Response({"message": "Successfully joined race"}, status=status.HTTP_201_CREATED)
+        print("RaceParticipant successfully created")
+        print(f"User {user.username}'s Races: {user.races_joined.all()}")
+        print(f"Car {car.name}'s Races: {car.race_participations.all()}")
+        return Response({"success": True, "message": "Successfully joined race"}, status=status.HTTP_201_CREATED)
 
 
 #   List all the Races a RaceOwner Owns and All the Participating Cars
