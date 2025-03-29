@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}All Races - My App{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-3">All Races</h1>
+
+    <!-- Search Form -->
+    <form id="search-form" class="mb-4">
+        <div class="input-group">
+            <input type="text" id="search-race" class="form-control" placeholder="Search by Race Name..." required>
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    <!-- Table to Display Races -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Race Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="race-table-body">
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    fetchVideos();  // Load races on page load
+
+    // Fetch all race videos from media
+    function fetchVideos(query = '') {
+        fetch(`/media/videos/?race=${query}`)  // Update this line to fetch from media/videos endpoint
+        .then(response => response.json())
+        .then(data => {
+            let tableBody = document.getElementById("race-table-body");
+            tableBody.innerHTML = ""; // Clear previous entries
+
+            data.forEach(video => {
+                let row = `<tr>
+                    <td>${video.race}</td>
+                    <td><a href="/pages/play_video/?race=${video.race}" class="btn btn-primary btn-sm">Watch</a></td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        })
+        .catch(error => console.error("Error fetching videos:", error));
+    }
+
+    // Handle search functionality (AJAX-style)
+    document.getElementById("search-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        let raceName = document.getElementById("search-race").value.trim();
+        fetchVideos(raceName);  // Refetch with query
+    });
+});
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetchVideos();  // Load videos on page load
+    
+        function fetchVideos(query = '') {
+            fetch(`/media/videos/?race=${query}`)  // Get videos from the API
+            .then(response => response.json())
+            .then(data => {
+                let tableBody = document.getElementById("race-table-body");
+                tableBody.innerHTML = ""; // Clear previous entries
+    
+                data.forEach(video => {
+                    let row = `<tr>
+                        <td>${video.race}</td>
+                        <td><a href="/pages/play_video/?race=${video.race}" class="btn btn-primary btn-sm">Watch</a></td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => console.error("Error fetching videos:", error));
+        }
+    
+        // Handle search functionality (AJAX-style)
+        document.getElementById("search-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let raceName = document.getElementById("search-race").value.trim();
+            fetchVideos(raceName);  // Refetch with query
+        });
+    });
+    </script>
+    
+{% endblock %}

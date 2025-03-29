@@ -17,15 +17,14 @@ class ImageSerializer(serializers.ModelSerializer):
     
 class VideoSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Video
-        # fields = ['username', 'race', 'title', 'file', "video_url", "thumbnail", 'upload_time']
-        fields = ['race', 'file', 'video_url', 'upload_time']
-        
+        fields = ['race', 'video_url']
+
     def get_video_url(self, obj):
-        print(f"video path: {obj.file.url}")
-        if obj.file:
-            return obj.file.url
-        return None
-        # return default_storage.url(obj.file.name)
+        # Ensure the URL is properly constructed
+        video_url = obj.file  # Assuming the 'file' field stores the URL
+        # Decode it once, if it's URL-encoded
+        return video_url  # No extra encoding needed here
         

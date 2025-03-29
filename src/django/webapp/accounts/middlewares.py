@@ -1,4 +1,4 @@
-import jwt
+from jwt import algorithms
 import requests
 from jwt.algorithms import RSAAlgorithm
 from django.http import JsonResponse

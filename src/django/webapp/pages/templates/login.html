@@ -23,7 +23,8 @@
 
             const response = await fetch("/auth/sign-in/", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {  "Authorization": "Bearer " + idToken, 
+                "Content-Type": "application/json" },
                 body: JSON.stringify(jsonData)
             });
 

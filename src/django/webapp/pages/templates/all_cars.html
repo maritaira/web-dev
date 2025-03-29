@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}My Cars - Dashboard{% endblock %}
+
+{% block content %}
+<h1>My Cars</h1>
+<p>This is the main cars dashboard area.</p>
+
+<div id="cars-list">
+    {% for car in cars %}
+    <div class="collapsible">
+        <button type="button" class="collapsible-btn">{{ car.name }}</button>
+        <div class="content">
+            <p><img src="https://via.placeholder.com/150" alt="Car Image" class="car-image"></p>
+            <button class="delete-btn">Delete</button>
+            <button class="join-race-btn">Join Race</button>
+            <input type="text" placeholder="Enter Race Code">
+            <button class="delete-pictures-btn">Delete Pictures</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.querySelectorAll('.collapsible-btn').forEach((button) => {
+        button.addEventListener('click', function () {
+            this.classList.toggle('active');
+            let content = this.nextElementSibling;
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+            } else {
+                content.style.display = 'block';
+            }
+        });
+    });
+</script>
+{% endblock %}

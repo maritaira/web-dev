@@ -1,42 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Upload</title>
-</head>
-<body>
-    <h1>View and Upload Images for a Car</h1>
-    <form method="GET" action="{% url 'display_images' %}">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" value="{{ username }}" required>
+{% extends 'base.html' %}
 
-        <label for="car_name">Car Name:</label>
-        <input type="text" id="car_name" name="car_name" value="{{ car_name }}" required>
+{% block title %}Image Upload{% endblock %}
+
+{% block content %}
+    <h1>View and Upload Images for a Car</h1>
+
+    <!-- Form to filter images by car -->
+    <form method="GET" action="{% url 'pages:display_images' %}">
+        <!--<label for="username">Username:</label> --> 
+        <!--<input type="text" id="username" name="username" value="{{ username }}" required> -->
+
+        <label for="car_name">Car Name (Leave blank to see all images):</label>
+        <input type="text" id="car_name" name="car_name" value="{{ car_name }}">
 
         <button type="submit">View Images</button>
     </form>
 
-    {% if username and car_name %}
-        <h2>Images for {{ car_name }}</h2>
+    <!-- List of cars with uploaded images -->
+    <h2>All Cars with Uploaded Images</h2>
+    <ul>
+        {% for car in car_list %}
+            <li>
+                <a href="{% url 'pages:display_images' %}?car_name={{ car }}">{{ car }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Display images -->
+    {% if images %}
+        <h2>Images {% if car_name %}for {{ car_name }}{% else %}(All){% endif %}</h2>
         <div>
             {% for image in images %}
                 {% if image.image_url %}
-                    <img src="{{ image.image_url }}" alt="Uploaded Image" width="200">
+                    <img src="{{ image.image }}" alt="Uploaded Image" width="200">
                 {% endif %}
             {% endfor %}
         </div>
-
-        <h2>Upload more images</h2>
-        <form method="POST" action="{% url 'upload_image' %}" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="hidden" name="username" value="{{ username }}">
-            <input type="hidden" name="car_name" value="{{ car_name }}">
-            <label for="images">Select Images:</label>
-            <input type="file" id="images" name="images" multiple>
-            <button type="submit">Upload</button>
-        </form>
+    {% else %}
+        <p>No images found.</p>
     {% endif %}
+
+    <!-- Upload Form -->
+    <h2>Upload more images</h2>
+    <form method="POST" action="{% url 'pages:upload_image' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="username" value="{{ username }}">
+        <label for="car_name">Car Name:</label>
+        <input type="text" name="car_name" id="car_name" required>
+
+        <label for="images">Select Images:</label>
+        <input type="file" id="images" name="images" multiple>
+        <button type="submit">Upload</button>
+    </form>
 
     {% if success %}
         <p style="color: green;">{{ success }}</p>
@@ -44,6 +59,4 @@
     {% if error %}
         <p style="color: red;">{{ error }}</p>
     {% endif %}
-
-</body>
-</html>
+{% endblock %}

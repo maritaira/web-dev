@@ -10,11 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+
+
+import boto3
 from pathlib import Path
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -31,7 +35,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    ##'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -75,7 +79,9 @@ ROOT_URLCONF = 'webapp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -98,6 +104,12 @@ from decouple import config
 
 DATABASES = {
     'default': {
+        # 'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': 'sp4_db',
+        # 'HOST': 'localhost',
+        # 'PORT': '3306',
+        # 'USER': 'root',
+        # 'PASSWORD': '@v@n!B2002',
         'ENGINE': 'django.db.backends.mysql',
         'NAME': config('DB_NAME'),
         'HOST': config('DB_HOST'),
@@ -173,21 +185,18 @@ COGNITO_JWT_AUTH = {
 
 AUTH_USER_MODEL = 'accounts.CognitoUser'
 
-STORAGES = {
+STATICFILES_DIRS = [
+    BASE_DIR / "pages/static",  # Resolves to "/Users/avanibhute/Desktop/web-dev/src/django/webapp/pages/static"
+]
 
-    # Media file (image) management  
-    "default": {
-        "BACKEND": "webapp.storages.CarsBucketStorage",
-    },
-   
-    # CSS and JS file management
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-    },
-}
+# When DEBUG = False, collect static files here
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 TEMPLATES = [
     {

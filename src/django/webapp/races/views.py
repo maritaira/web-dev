@@ -92,7 +92,7 @@ class JoinRaceView(generics.CreateAPIView):
     # permission_classes = [IsAuthenticated, IsCarOwner]
     permission_classes = [AllowAny]
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         print("In create for JoinRace")
         user = request.user # assuming authentication is set up
         join_code = request.data.get("join_code")
