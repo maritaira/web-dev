@@ -17,5 +17,6 @@ urlpatterns = [
     path('all_cars/', views.all_cars, name='all_cars'),
     path('display_images/', views.display_images, name="display_images"),
     path('play_video/', views.play_video, name="play_video"),
-    path('upload_image/', views.dashboard, name='upload_image')
+    path('upload_image/', views.dashboard, name='upload_image'),
+    path('raceownerDash/', views.raceDash, name='raceownerDash')
 ]

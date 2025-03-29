@@ -6,6 +6,9 @@ class IsRaceOwner(BasePermission):
     def has_permission(self, request, view):
         print("In isRaceOwner has_permissions()")
         print(f"Groups: {request.user.groups}")
+        print(f"User Type: {request.user.__class__}")  # Prints the user model type
+        print(f"User is authenticated: {request.user.is_authenticated}")
+        print(request.user)
         return 'raceowner' in request.user.groups
 
 

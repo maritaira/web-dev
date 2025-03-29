@@ -1,0 +1,93 @@
+{% extends 'raceowner_base.html' %}
+
+{% block title %}Race Owner Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Welcome to Your Race Owner Dashboard</h2>
+    <p>From here, you can manage your races and videos.</p>
+
+    <!-- Create Race Button -->
+    <a href="{% url 'pages:create_race' %}" class="btn btn-primary btn-lg mt-4">
+        <i class="bi bi-plus-circle"></i> Create New Race
+    </a>
+
+    <!-- List of Races (Placeholder for now) -->
+    <div id="race-list" class="mt-4">
+        <!-- The list of races will be dynamically populated here -->
+    </div>
+</div>
+
+<script>
+    // Check if the user is authenticated by verifying the idToken
+    document.addEventListener("DOMContentLoaded", async function() {
+        // Retrieve the idToken from localStorage
+        const idToken = localStorage.getItem("id_token");
+
+        if (!idToken) {
+            alert("You must be logged in to access the Race Owner Dashboard.");
+            window.location.href = "/login/";  // Redirect to login page
+            return;
+        }
+
+        // Fetch race data with the authorization token
+        try {
+            const response = await fetch("/races/my_races/", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Unauthorized or failed to fetch races.");
+            }
+
+            const data = await response.json();
+            console.log("Races Data:", data);
+
+            // Populate race list (This is a placeholder for now)
+            const raceListElement = document.getElementById("race-list");
+            raceListElement.innerHTML = ''; // Clear previous content if any
+
+            if (data && Object.keys(data).length > 0) {
+                const raceTable = document.createElement("table");
+                raceTable.classList.add("table", "table-striped");
+
+                const tableHeader = document.createElement("thead");
+                tableHeader.innerHTML = `
+                    <tr>
+                        <th scope="col">Race Name</th>
+                        <th scope="col">Car</th>
+                        <th scope="col">Owner</th>
+                    </tr>
+                `;
+                raceTable.appendChild(tableHeader);
+
+                const tableBody = document.createElement("tbody");
+                Object.keys(data).forEach(raceName => {
+                    data[raceName].forEach(carAndOwner => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${raceName}</td>
+                            <td>${carAndOwner.car}</td>
+                            <td>${carAndOwner.owner}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                });
+
+                raceTable.appendChild(tableBody);
+                raceListElement.appendChild(raceTable);
+            } else {
+                raceListElement.innerHTML = "<p>No races found.</p>";
+            }
+
+        } catch (error) {
+            console.error("Error fetching races:", error);
+            alert("Failed to fetch races. Please try again later.");
+        }
+    });
+</script>
+{% endblock %}
