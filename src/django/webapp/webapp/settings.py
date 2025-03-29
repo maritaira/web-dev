@@ -150,8 +150,8 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AWS_ACCESS_KEY_ID = config('S3_ACCESS_KEY')
-AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
+# AWS_ACCESS_KEY_ID = config('S3_ACCESS_KEY')
+# AWS_SECRET_ACCESS_KEY = config('S3_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = config('AWS_REGION_NAME')
 AWS_STORAGE_CARS_BUCKET_NAME = config('S3_CARS_BUCKET_NAME')
 AWS_STORAGE_RACES_BUCKET_NAME = config('S3_RACES_BUCKET_NAME')
@@ -173,11 +173,13 @@ COGNITO_JWT_AUTH = {
 
 AUTH_USER_MODEL = 'accounts.CognitoUser'
 
+COGNITO_IDENTITY_POOL_ID = config('COGNITO_IDENTITY_POOL_ID')
+
 STORAGES = {
 
     # Media file (image) management  
     "default": {
-        "BACKEND": "webapp.storages.CarsBucketStorage",
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
     },
    
     # CSS and JS file management

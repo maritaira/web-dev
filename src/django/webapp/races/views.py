@@ -8,10 +8,9 @@ from django.shortcuts import get_object_or_404
 from .models import Race, Car, RaceParticipant
 from .serializers import RaceSerializer, CarSerializer, RaceParticipantSerializer
 from accounts.permissions import IsCarOwner, IsRaceOwner
-from media.views import ImageViewSet
 from media.models import Image
 from media.serializers import ImageSerializer
-from webapp.storages import RacesBucketStorage
+from webapp.storages import RacesBucketStorage, CarsBucketStorage
 import uuid
 import json
 
@@ -53,6 +52,9 @@ class AddCarView(generics.CreateAPIView):
         print("In perform_create for AddCar")
         print(f"Checking user: {self.request.user.username}")
         print(f"Car data: {self.request.data}")
+        print(f"Type of request.user: {type(self.request.user)}")
+        print(self.request.user)
+        
         
         serializer = CarSerializer(data=self.request.data)
         if serializer.is_valid():
@@ -65,11 +67,36 @@ class AddCarView(generics.CreateAPIView):
             
             image_files = self.request.FILES.getlist('images')
             image_instances = []
+            print(image_files)
             
+            try:
+                storage = CarsBucketStorage()
+            except Exception as e:
+                print(f"Error when initializing CarsBucketStorage: {str(e)}")
+                return
+            
+            id_token = self.request.headers.get('Authorization', '').split("Bearer ")[-1]
+            print(f"ID Token: {id_token}")
+            
+            storage._get_client(self.request.user.cognito_identity_id, id_token)
+            
+            if not storage.s3_client:
+                print("s3 client not retrieved successfully")
+                return
+              
             for image in image_files:
-                image_instance = Image.objects.create(car=car, image=image)
+                print("Creeating Image object without image")
+                # image_instance =Image.objects.create(car=car, image=image)
+                image_instance = Image(car=car, image=image)
+                print("Assigning image storage")
+                image_instance.image.storage = storage  # Assign storage dynamically
+                # print("saving image name and file")
+                # image_instance.image.save(image.name, image, save=False)
+                print("Saving image instance")
+                image_instance.save()
                 image_instances.append(image_instance)
-                
+               
+            print("Initializing image serializer") 
             image_serializer = ImageSerializer(image_instances,  many=True)
             response = Response({
                     "message": "Images uploaded successfully",
