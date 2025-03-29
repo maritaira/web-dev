@@ -106,7 +106,6 @@
                             {% endfor %}
                         </div>
 
-                        {% if car_image_list|length >= 1 %}
                             <hr>
                             <div class="button-group">
                                 <div class="add-img-group">
@@ -115,6 +114,7 @@
                                     <input type="file" class="form-control" id="images-{{ car.id }}" name="images" multiple required>
                                     <button class="btn btn-primary add-img-btn" data-car-id="{{ car.id }}">Add Images</button>
                                 </div>
+                                {% if car_image_list|length >= 1 %}
                                 <div class="join-race-group">
                                     <input type="text" class="form-control" placeholder="Join Code">
                                     <button class="btn btn-success">Join Race</button>
