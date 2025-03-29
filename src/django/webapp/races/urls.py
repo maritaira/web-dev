@@ -9,4 +9,6 @@ urlpatterns = [
     path("cars/<str:car_name>/races/", views.ListRacesCarJoinedView.as_view(), name="races-car-joined"),
     path("users/<str:username>/races/", views.ListRacesUserJoinedView.as_view(), name="races-user-joined"),
     path("users/<str:username>/cars/", views.ListUserCarsView.as_view(), name="cars-user-owns"),
+    path('races/my_races/',views.RaceOwnerMyRacesView.as_view(), name="raceowner-myraces")
 ]
+
