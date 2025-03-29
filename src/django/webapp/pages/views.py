@@ -239,16 +239,17 @@ def all_cars(request):
     return render(request, 'all_cars.html', {'username': username, 'cars': cars, 'car_images': car_images})
 
 def raceDash(request):
-    view = RaceOwnerMyRacesView.as_view()
+    # view = RaceOwnerMyRacesView.as_view()
     
-    # Call the view method to get the response data
-    response = view(request)
+    # # Call the view method to get the response data
+    # response = view(request)
     
-    # Check if the response is JSON and return it to the template
-    if isinstance(response, JsonResponse):
-        race_data = response.json()
-    else:
-        # If the response is not JSON (direct HTML), pass the context to the template
-        race_data = response.context_data.get('race_data', [])
+    # # Check if the response is JSON and return it to the template
+    # if isinstance(response, JsonResponse):
+    #     race_data = response.json()
+    # else:
+    #     # If the response is not JSON (direct HTML), pass the context to the template
+    #     race_data = response.context_data.get('race_data', [])
     
-    return render(request, 'raceDashboard.html', {'race_data': race_data})
+    # return render(request, 'raceDashboard.html', {'race_data': race_data})
+    return render(request, 'raceDashboard.html')

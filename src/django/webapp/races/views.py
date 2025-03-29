@@ -136,6 +136,7 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
             ]
             
             race_list[race.name] = cars_and_owners
+            print(race_list)
             
         return Response(race_list)
         
