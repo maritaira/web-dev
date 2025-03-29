@@ -73,6 +73,15 @@ def all_cars(request):
 def upcoming_races(request):
     return render (request, 'upcoming_races.html')
 
+
+
+def r_my_races(request):
+    user = request.user
+    
+    return render(request, 'r_dashboard.html')
+
+
+
 MEDIA_API_URL = "http://127.0.0.1:8000/media/"
 
 def play_video(request):

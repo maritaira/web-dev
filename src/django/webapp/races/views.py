@@ -89,8 +89,7 @@ class AddCarView(generics.CreateAPIView):
 
 class JoinRaceView(generics.CreateAPIView):
     serializer_class = RaceParticipantSerializer
-    # permission_classes = [IsAuthenticated, IsCarOwner]
-    permission_classes = [AllowAny]
+    permission_classes = [IsCarOwner]
 
     def create(self, request):
         print("In create for JoinRace")
@@ -102,7 +101,7 @@ class JoinRaceView(generics.CreateAPIView):
         car = get_object_or_404(Car, id=car_id, owner=user) # ensure user owns car
         
         if not race:
-            print("invalid join code")
+            print("Invalid join code")
             return Response({"error": "Invalid join code"}, status=status.HTTP_400_BAD_REQUEST)
         
         if RaceParticipant.objects.filter(race=race, car_owner=user, car=car).exists():
@@ -111,6 +110,33 @@ class JoinRaceView(generics.CreateAPIView):
 
         RaceParticipant.objects.create(race=race, user=request.user)
         return Response({"message": "Successfully joined race"}, status=status.HTTP_201_CREATED)
+
+
+#   List all the Races a RaceOwner Owns and All the Participating Cars
+class RaceOwnerMyRacesView(generics.ListAPIView):
+    serializer_class = RaceParticipantSerializer
+    permission_classes = [IsRaceOwner]
+    
+    def get(self, request, *args, **kwargs):
+        raceowner = request.user
+        print(f"In RaceOwnerMyRacesView for raceowner: {raceowner}")
+        races = Race.objects.filter(owner=raceowner)
+        print(f"Races {raceowner} owns: {races}")
+        
+        race_list = {}
+        
+        for race in races:
+            participants = RaceParticipant.objects.filter(race=race)
+            
+            cars_and_owners = [
+                {"car": participant.car.name, "owner": participant.car_owner.username} for participant in participants
+            ]
+            
+            race_list[race.name] = cars_and_owners
+            
+        return Response(race_list)
+        
+    
 
 class ListCarsInRaceView(generics.ListAPIView):
     serializer_class = RaceParticipantSerializer
