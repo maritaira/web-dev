@@ -137,6 +137,10 @@ class SignInView(APIView):
                     Username=username
                 )
                 groups = [group['GroupName'] for group in groups_response.get('Groups', [])]
+                if 'raceowner' in groups:
+                    redirect_url = "/pages/raceownerDash/"
+                else:
+                    redirect_url = "/pages/dashboard/"
                 print(f"Successfully signed in as {user_info["Username"]}")
                 request.session['username'] = user_info["Username"]
                 response = Response({"message": "Sign-in successful",
@@ -144,7 +148,8 @@ class SignInView(APIView):
                                  "access_token": access_token, 
                                  "refresh_token": refresh_token,
                                  "username": user_info["Username"], 
-                                 "groups": groups
+                                 "groups": groups,
+                                 "redirect_url": redirect_url
                                  }, status=status.HTTP_200_OK,
                                     content_type="application/json")
                 # print(f"Response data: {response.data}")

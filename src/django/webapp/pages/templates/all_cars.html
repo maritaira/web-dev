@@ -106,20 +106,20 @@
                     {% endfor %}
                   </div>
 
-                  {% if car_image_list|length >= 1 %}
-                    <hr>
-                    <div class="button-group">
-                      <div class="add-car-group">
-                        <input type="file" class="form-control" id="images" name="images" multiple required>
-                        <button class="btn btn-primary" >Add Car</button>
-                      </div>
+                  <hr>
+                  <div class="button-group">
+                    <div class="add-car-group">
+                      <input type="file" class="form-control" id="images" name="images" multiple required>
+                      <button class="btn btn-primary" >Add Car</button>
+                    </div>
+                    {% if car_image_list|length >= 1 %}
                       <div class="join-race-group">
                         <input type="text" class="form-control join-code" placeholder="Join Code">
                         <button class="btn btn-success join-race-btn" data-car-id="{{ car.id }}">Join Race</button>
                       </div>
-                      <button class="btn btn-danger">Delete Car</button>
-                    </div>
-                  {% endif %}
+                    {% endif %}
+                    <button class="btn btn-danger">Delete Car</button>
+                  </div>
                 {% endwith %}
               {% else %}
                 <p>No images available for this car.</p>
