@@ -5,20 +5,6 @@
 {% block content %}
     <h1>Dashboard</h1>
 
-    <h2>Upload Image</h2>
-    <form method="POST" enctype="multipart/form-data" action="{% url 'pages:dashboard' %}">
-        {% csrf_token %}
-        <label for="image">Select Image</label>
-        <input type="file" name="image" id="image" required>
-        <br>
-        <label for="username">Username</label>
-        <input type="text" name="username" id="username" value="{{ user.username }}" required>
-        <br>
-        <label for="car_name">Car Name</label>
-        <input type="text" name="car_name" id="car_name" required>
-        <br>
-        <button type="submit">Upload</button>
-    </form> 
 
     <!-- Displaying the uploaded image if available -->
     {% if image %}

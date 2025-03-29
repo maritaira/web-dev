@@ -4,74 +4,90 @@
 {% block content %}
 <style>
   .container-fluid {
-      height: 100vh; /* Full height of the viewport */
+      height: 100vh;
       padding: 0;
   }
   html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden; /* Prevent any scrolling */
-    }
-  /* Fix the accordion to the top of the page */
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+  }
   .accordion-container {
-      position: fixed; /* Fix the accordion in place */
+      position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      height: 100vh; /* Full height of the viewport */
-      overflow-y: auto; /* Allow vertical scrolling */
-      padding-top: 60px; /* Space from the top for content */
-      background-color: #fff; /* Optional: White background for contrast */
-      z-index: 999; /* Keep the accordion on top */
+      height: 100vh;
+      overflow-y: auto;
+      padding-top: 60px;
+      background-color: #fff;
+      z-index: 999;
   }
-
   .accordion {
-      width: 90%; /* Make accordion fill the width */
-      max-width: 80%; /* Prevent overflow beyond the screen width */
-      overflow-x: hidden; /* Prevent horizontal scroll */
-      box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+      width: 90%;
+      max-width: 90%;
+      overflow-x: hidden;
+      box-sizing: border-box;
   }
-
   .accordion-item {
       width: 100%;
       margin-bottom: 10px;
       border: none;
   }
-
   .accordion-button {
-      width: 100%; /* Make button width stretch across */
-      text-align: left; /* Align text left */
+      width: 100%;
+      text-align: left;
   }
-
   .accordion-body {
-      max-height: 500px; /* Limit height if needed */
-      overflow-y: auto; /* Allow scrolling if content overflows */
+      max-height: 500px;
+      overflow-y: auto;
   }
-
-  /* Optional: Adjust images to fit within the container */
   .img-fluid {
-      max-width: 30%; /* Ensure images fit within the container */
+      max-width: 20%;
       height: auto;
   }
+  .button-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      gap: 15px;
+  }
+  .button-group button {
+      flex: 1;
+      min-width: 60px;
+      padding: 5px 10px;
+      font-size: 0.875rem;
+  }
+  .join-race-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+  }
+  .join-race-group input {
+      width: 170px;
+  }
+  .add-car-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+  }
 
-  /* Responsive for smaller screens */
   @media (max-width: 200px) {
       .accordion-button {
-          font-size: 15px; /* Adjust font size for small screens */
+          font-size: 15px;
       }
-
       .accordion-body {
-          max-height: 150px; /* Limit height for mobile */
+          max-height: 150px;
       }
   }
 </style>
+
 <div class="container">
-    <!-- Welcome Message -->
     <h2 class="mt-3">Hello {{ username }}!</h2>
     <h4 class="text-muted">My Cars</h4>
 
-    <!-- Accordion for Cars -->
     <div class="accordion mt-3" id="carAccordion">
       {% for car in cars %}
         <div class="accordion-item">
@@ -84,16 +100,25 @@
             <div class="accordion-body">
               {% if car_images|get_item:car.name %}
                 {% with car_images|get_item:car.name as car_image_list %}
-                  {% for image_url in car_image_list %}
-                      <img src="{{ image_url }}" alt="{{ car.name }} Image" class="img-fluid mb-2" />
-                  {% endfor %}
-                  
-                  {% if car_image_list|length >= 2 %}
-                      <button class="btn btn-primary mt-3 join-race-btn" data-car-id="{{ car.id }}">Join a Race</button>
-                      <div id="join-race-form-{{ car.id }}" class="join-race-form" style="display:none;">
-                        <input type="text" id="race_code-{{ car.id }}" class="form-control mt-2" placeholder="Enter race code" />
-                        <button class="btn btn-success mt-2" id="join-btn-{{ car.id }}">Join</button>
+                  <div class="d-flex flex-wrap">
+                    {% for image_url in car_image_list %}
+                      <img src="{{ image_url }}" alt="{{ car.name }} Image" class="img-fluid mb-2 me-2" />
+                    {% endfor %}
+                  </div>
+
+                  {% if car_image_list|length >= 1 %}
+                    <hr>
+                    <div class="button-group">
+                      <div class="add-car-group">
+                        <input type="file" class="form-control" id="images" name="images" multiple required>
+                        <button class="btn btn-primary" >Add Car</button>
                       </div>
+                      <div class="join-race-group">
+                        <input type="text" class="form-control" placeholder="Join Code">
+                        <button class="btn btn-success">Join Race</button>
+                      </div>
+                      <button class="btn btn-danger">Delete Car</button>
+                    </div>
                   {% endif %}
                 {% endwith %}
               {% else %}
@@ -105,70 +130,4 @@
       {% endfor %}
     </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-      // Handle "Join a Race" button click
-      const joinRaceButtons = document.querySelectorAll('.join-race-btn');
-      
-      joinRaceButtons.forEach(button => {
-          button.addEventListener('click', function() {
-              const carId = this.getAttribute('data-car-id');
-              const form = document.getElementById(`join-race-form-${carId}`);
-              
-              // Toggle the form visibility
-              form.style.display = form.style.display === 'none' ? 'block' : 'none';
-          });
-      });
-
-      // Handle "Join" button click
-      const joinButtons = document.querySelectorAll('[id^="join-btn-"]');
-      
-      joinButtons.forEach(button => {
-          button.addEventListener('click', function() {
-              const carId = this.id.split('-')[2]; // Get the car ID
-              const raceCode = document.getElementById(`race_code-${carId}`).value.trim();
-              
-              if (raceCode) {
-                  
-                  // get the id token from local storage
-                  const idToken = localStorage.getItem("id_token");
-
-                  if (!idToken) {
-                      alert("You must be logged in to create a race.");
-                      return;
-                  }
-                  // Send request to backend
-                  fetch('/join-race/', {
-                      method: 'POST',
-                      headers: {
-                          "Authorization": "Bearer " + idToken,
-                          'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                          car_id: carId,
-                          join_code: raceCode
-                      })
-                  })
-                  .then(response => response.json())
-                  .then(data => {
-                      if (data.success) {
-                          alert('Successfully joined the race!');
-                          // Optionally close the form after success
-                          document.getElementById(`join-race-form-${carId}`).style.display = 'none';
-                      } else {
-                          alert('Failed to join the race. Please check the race code.');
-                      }
-                  })
-                  .catch(error => {
-                      console.error('Error:', error);
-                      alert('Something went wrong.');
-                  });
-              } else {
-                  alert('Please enter a race code.');
-              }
-          });
-      });
-  });
-</script>
 {% endblock %}
