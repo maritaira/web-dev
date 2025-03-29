@@ -83,9 +83,19 @@
           <div id="collapse-{{ car.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ car.id }}" data-bs-parent="#carAccordion">
             <div class="accordion-body">
               {% if car_images|get_item:car.name %}
-                {% for image_url in car_images|get_item:car.name %}
-                    <img src="{{ image_url }}" alt="{{ car.name }} Image" class="img-fluid mb-2" />
-                {% endfor %}
+                {% with car_images|get_item:car.name as car_image_list %}
+                  {% for image_url in car_image_list %}
+                      <img src="{{ image_url }}" alt="{{ car.name }} Image" class="img-fluid mb-2" />
+                  {% endfor %}
+                  
+                  {% if car_image_list|length >= 2 %}
+                      <button class="btn btn-primary mt-3 join-race-btn" data-car-id="{{ car.id }}">Join a Race</button>
+                      <div id="join-race-form-{{ car.id }}" class="join-race-form" style="display:none;">
+                        <input type="text" id="race_code-{{ car.id }}" class="form-control mt-2" placeholder="Enter race code" />
+                        <button class="btn btn-success mt-2" id="join-btn-{{ car.id }}">Join</button>
+                      </div>
+                  {% endif %}
+                {% endwith %}
               {% else %}
                 <p>No images available for this car.</p>
               {% endif %}
@@ -95,4 +105,70 @@
       {% endfor %}
     </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Handle "Join a Race" button click
+      const joinRaceButtons = document.querySelectorAll('.join-race-btn');
+      
+      joinRaceButtons.forEach(button => {
+          button.addEventListener('click', function() {
+              const carId = this.getAttribute('data-car-id');
+              const form = document.getElementById(`join-race-form-${carId}`);
+              
+              // Toggle the form visibility
+              form.style.display = form.style.display === 'none' ? 'block' : 'none';
+          });
+      });
+
+      // Handle "Join" button click
+      const joinButtons = document.querySelectorAll('[id^="join-btn-"]');
+      
+      joinButtons.forEach(button => {
+          button.addEventListener('click', function() {
+              const carId = this.id.split('-')[2]; // Get the car ID
+              const raceCode = document.getElementById(`race_code-${carId}`).value.trim();
+              
+              if (raceCode) {
+                  
+                  // get the id token from local storage
+                  const idToken = localStorage.getItem("id_token");
+
+                  if (!idToken) {
+                      alert("You must be logged in to create a race.");
+                      return;
+                  }
+                  // Send request to backend
+                  fetch('/join-race/', {
+                      method: 'POST',
+                      headers: {
+                          "Authorization": "Bearer " + idToken,
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                          car_id: carId,
+                          join_code: raceCode
+                      })
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          alert('Successfully joined the race!');
+                          // Optionally close the form after success
+                          document.getElementById(`join-race-form-${carId}`).style.display = 'none';
+                      } else {
+                          alert('Failed to join the race. Please check the race code.');
+                      }
+                  })
+                  .catch(error => {
+                      console.error('Error:', error);
+                      alert('Something went wrong.');
+                  });
+              } else {
+                  alert('Please enter a race code.');
+              }
+          });
+      });
+  });
+</script>
 {% endblock %}
