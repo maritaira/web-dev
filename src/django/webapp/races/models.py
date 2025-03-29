@@ -36,7 +36,7 @@ class RaceParticipant(models.Model):
     joined_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ('race', 'car_owner')
+        unique_together = ('race', 'car')
 
     def __str__(self):
         return f"{self.car} in {self.race.name}"

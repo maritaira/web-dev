@@ -14,9 +14,6 @@ class CarSerializer(serializers.ModelSerializer):
         read_only_fields = ["owner", "images_folder"]
         
 class RaceParticipantSerializer(serializers.ModelSerializer):
-    car_name = serializers.ReadOnlyField(source='car.name')
-    owner_username = serializers.ReadOnlyField(source='car_owner.username')
-    
     class Meta:
         model = RaceParticipant
-        fields = ["id", "car_name", "owner_username", "joined_at"]
+        fields = ["id", "race", "car_owner", "car", "joined_at"]

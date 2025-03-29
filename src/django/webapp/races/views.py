@@ -26,11 +26,12 @@ class CreateRaceView(generics.CreateAPIView):
         print(f"Checking user: {self.request.user.username}")
         print(f"race data: {self.request.data}")
         
-        serializer = RaceSerializer(data=self.request.data)
+        print(f"Serializer Data Before Save: {serializer.validated_data}")
+        # serializer = RaceSerializer(data=self.request.data)
         if serializer.is_valid():
             # print(f"Saving serializer with owner {self.request.user}")
             race = serializer.save(owner=self.request.user)
-            # print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
+            print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
         
             return Response({
                 "message": "Race created successfully",
@@ -94,11 +95,13 @@ class JoinRaceView(generics.CreateAPIView):
     def create(self, request):
         print("In create for JoinRace")
         user = request.user # assuming authentication is set up
+        print(user)
         join_code = request.data.get("join_code")
         car_id = request.data.get("car_id")
-        
+        print(f"Attempting to find race using join_code {join_code} for car_id {car_id}")
         race = Race.objects.filter(join_code=join_code).first()
         car = get_object_or_404(Car, id=car_id, owner=user) # ensure user owns car
+        print("Found car")
         
         if not race:
             print("Invalid join code")
@@ -108,7 +111,7 @@ class JoinRaceView(generics.CreateAPIView):
             print(f"Car {car.name} is already in race {race.name}")
             return Response({"error": f"Car {car.name} is already in race {race.name}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        RaceParticipant.objects.create(race=race, user=request.user)
+        RaceParticipant.objects.create(race=race, car_owner=user, car=car)
         return Response({"message": "Successfully joined race"}, status=status.HTTP_201_CREATED)
 
 
