@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Race Owner Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <style>
+        /* Custom styles for left sidebar */
+        .sidebar {
+            height: 100vh; /* Full height */
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: #2E3033; /* Dark gray */
+            padding-top: 20px;
+            width: 250px;
+        }
+        .sidebar .nav-link {
+            color: white;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #E7A523; /* Gold */
+        }
+        .main-content {
+            margin-left: 250px; /* Same width as sidebar */
+            padding: 20px;
+        }
+        .sidebar .logout-btn {
+            background-color: #A21622; /* Deep red */
+            color: white;
+        }
+        .sidebar .logout-btn:hover {
+            background-color: #E7A523; /* Gold */
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Left Sidebar -->
+            <nav class="col-md-2 sidebar">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'pages:dashboard' %}"></i> Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'pages:all_videos' %}">My Videos
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-md-10 main-content">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (at the bottom of base.html) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

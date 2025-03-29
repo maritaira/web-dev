@@ -227,3 +227,6 @@ def all_cars(request):
 
 
     return render(request, 'all_cars.html', {'username': username, 'cars': cars, 'car_images': car_images})
+
+def raceDash(request):
+    return render(request, "raceDashboard.html")

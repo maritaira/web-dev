@@ -1,0 +1,16 @@
+{% extends 'raceowner_base.html' %}
+
+{% block title %}Race Owner Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Welcome to Your Race Owner Dashboard</h2>
+    <p>From here, you can manage your races and videos.</p>
+
+    <!-- Create Race Button -->
+    <a href="{% url 'pages:create_race' %}" class="btn btn-primary btn-lg mt-4">
+        <i class="bi bi-plus-circle"></i> Create New Race
+    </a>
+
+</div>
+{% endblock %}
