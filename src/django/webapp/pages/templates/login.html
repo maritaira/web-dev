@@ -67,7 +67,7 @@
                 localStorage.setItem('access_token', result.access_token);
                 localStorage.setItem('refresh_token', result.refresh_token);
                 setTimeout(() => {
-                    window.location.href = "{% url 'pages:dashboard' %}";
+                    window.location.href = result.redirect_url;
                 }, 1000);
             } else {
                 messageElement.innerText = result.error;

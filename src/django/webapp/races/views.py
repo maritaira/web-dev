@@ -20,30 +20,25 @@ class CreateRaceView(generics.CreateAPIView):
     permission_classes = [IsRaceOwner]
     queryset = Race.objects.all()
     # permission_classes = [AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        print(f"Checking user: {request.user.username}")
+        print(f"Race data: {request.data}")
 
-    def perform_create(self, serializer):
-        # print("In perform_create for CreateRace")
-        print(f"Checking user: {self.request.user.username}")
-        print(f"race data: {self.request.data}")
-        
-        print(f"Serializer Data Before Save: {serializer.validated_data}")
-        # serializer = RaceSerializer(data=self.request.data)
-        if serializer.is_valid():
-            # print(f"Saving serializer with owner {self.request.user}")
-            race = serializer.save(owner=self.request.user)
-            print(f"race.id: {race.id}; race_name:{race.name}; join_code: {race.join_code}")
-        
-            return Response({
-                "message": "Race created successfully",
-                "race_id": race.id, 
-                "join_code": race.join_code,
-                "race": serializer.data
-                }, status=status.HTTP_201_CREATED)
-        print("Serializer not valid")    
-        return Response({
-            "message": "Error creating race.",
-            "errors": serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        race = serializer.save(owner=request.user)
+
+        response_data = {
+            "message": "Race created successfully",
+            "race_id": race.id,
+            "join_code": race.join_code,
+            "race": serializer.data
+        }
+
+        print("Custom Response:", response_data)
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
         
 
 class AddCarView(generics.CreateAPIView):
@@ -112,7 +107,10 @@ class JoinRaceView(generics.CreateAPIView):
             return Response({"error": f"Car {car.name} is already in race {race.name}"}, status=status.HTTP_400_BAD_REQUEST)
 
         RaceParticipant.objects.create(race=race, car_owner=user, car=car)
-        return Response({"message": "Successfully joined race"}, status=status.HTTP_201_CREATED)
+        print("RaceParticipant successfully created")
+        print(f"User {user.username}'s Races: {user.races_joined.all()}")
+        print(f"Car {car.name}'s Races: {car.race_participations.all()}")
+        return Response({"success": True, "message": "Successfully joined race"}, status=status.HTTP_201_CREATED)
 
 
 #   List all the Races a RaceOwner Owns and All the Participating Cars
@@ -136,6 +134,7 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
             ]
             
             race_list[race.name] = cars_and_owners
+            print(race_list)
             
         return Response(race_list)
         
