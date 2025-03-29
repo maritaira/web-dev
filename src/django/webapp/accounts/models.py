@@ -10,7 +10,6 @@ class CognitoUser(AbstractUser):
     name = models.CharField(max_length=255)
     lastname = models.CharField(max_length=255)
     groups = models.JSONField(default=list)
-    cognito_identity_id = models.CharField(max_length=255, blank=True, null=True)
     
     USERNAME_FIELD = 'username'
 

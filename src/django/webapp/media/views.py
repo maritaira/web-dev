@@ -7,9 +7,7 @@ from rest_framework import status
 from django.core.files import File
 from .models import Image, Video
 from .serializers import ImageSerializer, VideoSerializer
-from races.models import Car
-from accounts.permissions import IsCarOwner, IsRaceOwner
-from webapp.storages import RacesBucketStorage, CarsBucketStorage
+from webapp.storages import RacesBucketStorage
 # from django.conf import settings
 
 # Create your views here.
@@ -17,7 +15,7 @@ class ImageViewSet(ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [IsCarOwner, IsRaceOwner]
+    
     
     def list(self, request):
         # print("GET request received")
@@ -38,26 +36,19 @@ class ImageViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def create(self, request, *args, **kwargs):
-        car_id = request.data.get('car')
+        car = request.data.get('car')
         images = request.FILES.getlist('images')
         
         
         if not images:
             return Response({'error': 'No files provided.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not car_id:
+        if not car:
             return Response({'error': 'Car required.'}, status=status.HTTP_400_BAD_REQUEST)
         
         uploads = []
         
         try:
-            car = Car.objects.get(id=car_id)
-        except Car.DoesNotExist:
-            return Response({'error': 'Car not found.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
             for image in images:
-                storage = CarsBucketStorage(request.user)
-                image.storage = storage
                 serializer = self.get_serializer(data={'car': car,
                                                        'image': image
                                                        })
