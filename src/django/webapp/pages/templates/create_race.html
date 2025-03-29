@@ -1,64 +1,83 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Race</title>
-</head>
-<body>
-    <h2>Create a New Race</h2>
+{% extends 'base.html' %}
 
-    <form id="createrace-form">
-        <label for="name">Race Name:</label>
-        <input type="text" id="name" name="name" required><br><br>
+{% block title %}Create Race{% endblock %}
 
-        <label for="location">Location:</label>
-        <input type="text" id="location" name="location" required><br><br>
+{% block content %}
+<style>
+    head, body{
+    width: 95%; /* Make accordion fill the width */
+      max-width: 85%; /* Prevent overflow beyond the screen width */
+      overflow-x: hidden; /* Prevent horizontal scroll */
+      box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+}
+</style>
+<div class="container my-5">
+    <h2 class="text-center mb-4">Create a New Race</h2>
 
-        <label for="date">Race Date:</label>
-        <input type="date" id="date" name="date" required><br><br>
+    <form id="createrace-form" class="shadow-sm p-4 bg-white rounded">
+        <div class="mb-3">
+            <label for="name" class="form-label">Race Name:</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
 
-        <label for="num_cars">Number of Cars:</label>
-        <input type="number" id="num_cars" name="num_cars" required><br><br>
+        <div class="mb-3">
+            <label for="location" class="form-label">Location:</label>
+            <input type="text" id="location" name="location" class="form-control" required>
+        </div>
 
-        <button type="submit">Create Race</button>
+        <div class="mb-3">
+            <label for="date" class="form-label">Race Date:</label>
+            <input type="date" id="date" name="date" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="num_cars" class="form-label">Number of Cars:</label>
+            <input type="number" id="num_cars" name="num_cars" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Create Race</button>
     </form>
-    <p id="createrace-message"></p>
-    <script>
-        document.getElementById("createrace-form").onsubmit = async function(event) {
-            event.preventDefault();
 
-            const formData = new FormData(event.target);
-            const jsonData = Object.fromEntries(formData.entries());
+    <p id="createrace-message" class="mt-3 text-center"></p>
+</div>
 
-            console.log("Sending data:", jsonData);
+<script>
+    document.getElementById("createrace-form").onsubmit = async function(event) {
+        event.preventDefault();
 
-            // get the id token from local storage
-            const idToken = localStorage.getItem("id_token");
+        const formData = new FormData(event.target);
+        const jsonData = Object.fromEntries(formData.entries());
 
-            if (!idToken) {
-                alert("You must be logged in to create a race.");
-                return;
-            }
+        console.log("Sending data:", jsonData);
 
-            // Create a race request
-            const response = await fetch("/create-race/", {
-                method: "POST",
-                headers: {
-                    "Authorization": "Bearer " + idToken,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(jsonData)
-            });
-   
-            console.log("Response Status: ", response.status)
-            
-            const result = await response.json();
-            console.log("Response:", result);
-            if (result.message) {
-                document.getElementById("createrace-message").innerText = "Successfully created race!";
-            } else {
-                document.getElementById("createrace-message").innerText = response;
-            }
-        };
-    </script>
-</body>
-</html>
+        // get the id token from local storage
+        const idToken = localStorage.getItem("id_token");
+
+        if (!idToken) {
+            alert("You must be logged in to create a race.");
+            return;
+        }
+
+        // Create a race request
+        const response = await fetch("/create-race/", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + idToken,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(jsonData)
+        });
+
+        console.log("Response Status: ", response.status);
+
+        const result = await response.json();
+        console.log("Response:", result);
+
+        if (result.message) {
+            document.getElementById("createrace-message").innerText = "Successfully created race!";
+        } else {
+            document.getElementById("createrace-message").innerText = result.error || "Something went wrong!";
+        }
+    };
+</script>
+{% endblock %}

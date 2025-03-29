@@ -3,6 +3,32 @@
 {% block title %}All Races - My App{% endblock %}
 
 {% block content %}
+
+<style>
+  .container-fluid {
+      height: 100vh; /* Full height of the viewport */
+      padding: 0;
+  }
+  html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent any scrolling */
+    }
+form{
+    width: 90%; /* Make accordion fill the width */
+      max-width: 80%; /* Prevent overflow beyond the screen width */
+      overflow-x: hidden; /* Prevent horizontal scroll */
+      box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+}
+table{
+    width: 90%; /* Make accordion fill the width */
+    max-width: 90%; /* Prevent overflow beyond the screen width */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+}
+
+</style>
 <div class="container mt-4">
     <h1 class="mb-3">All Races</h1>
 

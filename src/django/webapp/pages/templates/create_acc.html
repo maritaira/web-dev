@@ -1,33 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .card {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Sign Up</h2>
-    <form id="signup-form">
-        {% comment %} <label for="firstname">First name:</label><br> {% endcomment %}
-        <input type="text" id="firstname" name="firstname" placeholder="First Name" required><br><br>
-        {% comment %} <label for="lastname">Last name:</label><br> {% endcomment %}
-        <input type="text" id="lastname" name="lastname" placeholder="Last Name" required><br><br>
-        {% comment %} <label for="username">Username:</label><br> {% endcomment %}
-        <input type="text" id="username" name="username" placeholder="Username" required><br><br>
-        {% comment %} <label for="password">Password:</label><br> {% endcomment %}
-        <input type="password" id="password" name="password" placeholder="Password" required><br><br>
-        {% comment %} <label for="email">Email:</label><br> {% endcomment %}
-        <input type="email" id="email" name="email" placeholder="Email" required><br><br>
-        <label for="user_group">User Type:</label><br>
-        <input type="checkbox" id="raceowner" name="user_group" value="raceowner">
-        <label for="raceowner"> I want to be a Race Owner</label><br>
-        <input type="checkbox" id="carowner" name="user_group" value="carowner">
-        <label for="carowner"> I want to be a Car Owner</label><br><br>
-        <button type="submit">Sign Up</button>
-    </form>
-    <p id="signup-message"></p>
+    <div class="card shadow-lg">
+        <div class="card-body">
+            <h2 class="text-center mb-4">Sign Up</h2>
+            <form id="signup-form">
+                <div class="mb-3">
+                    <input type="text" id="firstname" name="firstname" class="form-control" placeholder="First Name" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="lastname" name="lastname" class="form-control" placeholder="Last Name" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Username" required>
+                </div>
+                <div class="mb-3">
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="mb-3">
+                    <input type="email" id="email" name="email" class="form-control" placeholder="Email" required>
+                </div>
+                <label class="form-label">User Type:</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="raceowner" name="user_group" value="raceowner">
+                    <label class="form-check-label" for="raceowner"> I want to be a Race Owner</label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="carowner" name="user_group" value="carowner">
+                    <label class="form-check-label" for="carowner"> I want to be a Car Owner</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+            </form>
+            <p id="signup-message" class="mt-3 text-center"></p>
+        </div>
+    </div>
     <script>
         document.getElementById("signup-form").onsubmit = async function(event) {
             event.preventDefault();
             console.log("Form submitted!");
+
+            // Check if at least one checkbox is selected
+            let selectedGroups = document.querySelectorAll('input[name="user_group"]:checked');
+            if (selectedGroups.length === 0) {
+                alert("Please select at least one user type (Race Owner or Car Owner).");
+                return;
+            }
 
             let formData = {
                 name: document.getElementById("firstname").value,
@@ -35,22 +72,32 @@
                 username: document.getElementById("username").value,
                 email: document.getElementById("email").value,
                 password: document.getElementById("password").value,
-                groups: Array.from(document.querySelectorAll('input[name="user_group"]:checked')).map(el => el.value)
+                groups: Array.from(selectedGroups).map(el => el.value)
             };
 
             console.log("Sending data:", formData);
 
             const response = await fetch("/auth/sign-up/", {
                 method: "POST",
-                headers: { "Authorization": "Bearer " + idToken, 
-                    "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             });
 
             let data = await response.json();
             console.log("Response:", data);
-            alert(data.message || data.error);
+
+            const messageElement = document.getElementById("signup-message");
+            messageElement.innerText = data.message || data.error;
+
+            // Check if the response message contains success
+            if (data.message && data.message.toLowerCase().includes("successfully")) {
+                console.log("Account creation successful! Redirecting...");
+                setTimeout(() => window.location.href = "/pages/dashboard", 1000);
+            } else {
+                console.log("Account creation failed or unexpected message:", data.message);
+            }
         };
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

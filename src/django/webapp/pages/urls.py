@@ -1,8 +1,8 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-
 from . import views
+
 
 app_name='pages'
 
@@ -15,7 +15,6 @@ urlpatterns = [
     path('create_race/', views.create_race, name='create_race'),
     path('new_car/', views.new_car, name='new_car'),
     path('all_cars/', views.all_cars, name='all_cars'),
-    path('upcoming_races/', views.upcoming_races, name='upcoming_races'),
     path('display_images/', views.display_images, name="display_images"),
     path('play_video/', views.play_video, name="play_video"),
     path('upload_image/', views.dashboard, name='upload_image')
