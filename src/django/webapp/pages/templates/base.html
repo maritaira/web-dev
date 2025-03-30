@@ -51,7 +51,7 @@
                         <a class="nav-link" href="{% url 'pages:all_videos' %}">My Videos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" >Logout</a>
+                        <a class="nav-link" href="#" id="logout-button">Logout</a>
                     </li>
                 </ul>
             </nav>
@@ -63,7 +63,77 @@
             </main>
         </div>
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const logoutButton = document.getElementById("logout-button");
+            const confirmLogoutButton = document.getElementById("confirm-logout");
+            const usernamePlaceholder = document.getElementById("username-placeholder");
+    
+            // Retrieve username from localStorage 
+            usernamePlaceholder.textContent = localStorage.getItem("username")
+    
+            logoutButton.addEventListener("click", function () {
+                // Show the logout confirmation modal
+                let logoutModal = new bootstrap.Modal(document.getElementById("logoutModal"));
+                logoutModal.show();
+            });
+    
+            confirmLogoutButton.addEventListener("click", function () {
+                // get the id token from local storage
+                const idToken = localStorage.getItem("id_token");
+                const accessToken = localStorage.getItem("access_token");
+
+                if (!idToken) {
+                    alert("You must be logged in to log out");
+                    return;
+                }
+
+                fetch("/auth/sign-out/", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + idToken,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ 'access_token': accessToken })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Logout failed");
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    // Clear ID token from localStorage
+                    localStorage.removeItem("id_token");
+                    localStorage.removeItem("access_token");
+                    localStorage.removeItem("refresh_token");
+                    localStorage.removeItem("username");
+                    // Redirect to login page
+                    window.location.href = "/pages/login/";
+                })
+                .catch(error => console.error("Error during logout:", error));
+            });
+        });
+    </script>
 </body>
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to log out of <strong id="username-placeholder"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-logout">Log out</button>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Bootstrap JS (at the bottom of base.html) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
