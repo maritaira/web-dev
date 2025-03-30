@@ -137,7 +137,8 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
                 "details": {
                     "location": race.location,
                     "date": race.date.strftime("%Y-%m-%d"),  # Formatting date for JSON
-                    "num_cars": len(cars_and_owners)
+                    "num_cars": race.num_cars,
+                    "join_code": race.join_code
                 },
                 "cars": cars_and_owners
             }

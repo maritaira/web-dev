@@ -91,7 +91,15 @@
                             <div class="accordion-body">
                                 <p><strong>Location:</strong> ${raceDetails.location}</p>
                                 <p><strong>Date:</strong> ${raceDetails.date}</p>
-                                <p><strong>Number of Cars:</strong> ${raceDetails.num_cars}</p>
+                                <p><strong>Total Number of Cars:</strong> ${raceDetails.num_cars}</p>
+
+                                <div class="join-code">
+                                    <strong>Join Code:</strong>
+                                    <span id="join-code-{{ race.id }}">${raceDetails.join_code}</span>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyJoinCode('{{ race.id }}')">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                </div>
 
                                 <table class="table table-striped">
                                     <thead>
@@ -242,5 +250,14 @@
         }
     }
         */
+
+    function copyJoinCode(raceId) {
+        const joinCodeText = document.getElementById(`join-code-${raceId}`).innerText;
+        navigator.clipboard.writeText(joinCodeText).then(() => {
+            alert("Join Code copied to clipboard!");
+        }).catch(err => {
+            console.error("Failed to copy text: ", err);
+        });
+    }
 </script>
 {% endblock %}
