@@ -45,6 +45,7 @@
             event.preventDefault();
             const formData = new FormData(event.target);
             const jsonData = Object.fromEntries(formData.entries());
+            const username = document.getElementById("username").value;
 
             console.log("Sending data:", jsonData);
 
@@ -66,6 +67,7 @@
                 localStorage.setItem('id_token', result.id_token);
                 localStorage.setItem('access_token', result.access_token);
                 localStorage.setItem('refresh_token', result.refresh_token);
+                localStorage.setItem('username', username)
                 setTimeout(() => {
                     window.location.href = result.redirect_url;
                 }, 1000);

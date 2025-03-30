@@ -133,8 +133,48 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
                 {"car": participant.car.name, "owner": participant.car_owner.username} for participant in participants
             ]
             
-            race_list[race.name] = cars_and_owners
-            print(race_list)
+            race_list[race.name] = {
+                "details": {
+                    "location": race.location,
+                    "date": race.date.strftime("%Y-%m-%d"),  # Formatting date for JSON
+                    "num_cars": race.num_cars,
+                    "join_code": race.join_code
+                },
+                "cars": cars_and_owners
+            }
+        print(race_list)
+            
+        return Response(race_list)
+    
+#   List all the Races a CarOwner has Joined and Their Cars In Them
+class CarOwnerMyRacesView(generics.ListAPIView):
+    serializer_class = RaceParticipantSerializer
+    permission_classes = [IsCarOwner]
+    
+    def get(self, request, *args, **kwargs):
+        carowner = request.user
+        print(f"In CarOwnerMyRacesView for carowner: {carowner}")
+        participations = RaceParticipant.objects.filter(car_owner= carowner).select_related("race", "car")
+        print(f"Races {carowner} in: {participations}")
+        
+        race_list = {}
+        
+        for participation in participations:
+            race = participation.race
+            car = participation.car
+            
+            if race.name not in race_list:
+                race_list[race.name] = {
+                    "details": {
+                        "location": race.location,
+                        "date": race.date.strftime("%Y-%m-%d"),
+                        "num_cars": race.num_cars,
+                    },
+                    "cars": []
+                }
+            
+            race_list[race.name]["cars"].append(car.name)
+        print(race_list)
             
         return Response(race_list)
         

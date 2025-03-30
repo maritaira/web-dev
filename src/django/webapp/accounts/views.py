@@ -192,3 +192,19 @@ class SignInView(APIView):
         
     #     id_token = response.json()['ide_token']
     #     decode_jwt.lambda_handler(id_token)
+    
+    
+class SignOutView(APIView):
+    
+    def post(self, request):
+        print("in SignOutView")
+        token = json.loads(request.body).get("access_token")
+        print(token)
+            
+        try:
+            # print("Running initiate_auth()")
+            response = client.global_sign_out(AccessToken=token)
+            return Response({"message": response, "success": True}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(str(e))
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

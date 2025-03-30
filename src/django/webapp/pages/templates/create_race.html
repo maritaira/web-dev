@@ -75,6 +75,9 @@
 
         if (result.message) {
             document.getElementById("createrace-message").innerText = "Successfully created race!";
+            setTimeout(() => {
+                window.location.href = "/pages/raceownerDash/";
+            }, 1000);
         } else {
             document.getElementById("createrace-message").innerText = result.error || "Something went wrong!";
         }

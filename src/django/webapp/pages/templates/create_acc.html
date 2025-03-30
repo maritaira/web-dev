@@ -93,7 +93,7 @@
             // Check if the response message contains success
             if (data.message && data.message.toLowerCase().includes("successfully")) {
                 console.log("Account creation successful! Redirecting...");
-                setTimeout(() => window.location.href = "/pages/dashboard", 1000);
+                setTimeout(() => window.location.href = "/pages/login", 1000);
             } else {
                 console.log("Account creation failed or unexpected message:", data.message);
             }
