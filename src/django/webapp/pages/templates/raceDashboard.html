@@ -3,8 +3,26 @@
 {% block title %}Race Owner Dashboard{% endblock %}
 
 {% block content %}
+<style>
+    .accordion {
+        width: 90%; /* Makes it responsive */
+        margin: 0; /* Centers it */
+    }
+    .accordion-button {
+        font-weight: bold;
+    }
+    .accordion .table-wrapper {
+        overflow-x: auto; /* Enables horizontal scrolling */
+        max-width: 100%; /* Prevents overflow */
+    }
+    
+    .accordion table {
+        width: 100%; /* Ensures table scales properly */
+        table-layout: auto;
+    }
+</style>
 <div class="container">
-    <h2>Welcome to Your Race Owner Dashboard</h2>
+    <h2>Welcome to Your Race Track Owner Dashboard</h2>
     <p>From here, you can manage your races and videos.</p>
 
     <!-- Create Race Button -->
@@ -13,7 +31,7 @@
     </a>
 
     <!-- List of Races (Placeholder for now) -->
-    <div id="race-list" class="mt-4">
+    <div id="raceAccordion" class="accordion mt-4">
         <!-- The list of races will be dynamically populated here -->
     </div>
 </div>
@@ -47,6 +65,74 @@
             const data = await response.json();
             console.log("Races Data:", data);
 
+
+            const raceAccordion = document.getElementById("raceAccordion");
+            raceAccordion.innerHTML = ''; // Clear previous content
+
+            if (data && Object.keys(data).length > 0) {
+                Object.keys(data).forEach((raceName, index) => {
+                    const raceDetails = data[raceName].details;
+                    const cars = data[raceName].cars;
+
+                    // Create accordion item
+                    const accordionItem = document.createElement("div");
+                    accordionItem.classList.add("accordion-item");
+
+                    accordionItem.innerHTML = `
+                        <h2 class="accordion-header" id="heading${index}">
+                            <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#collapse${index}" 
+                                aria-expanded="${index === 0}" aria-controls="collapse${index}">
+                                ${raceName}
+                            </button>
+                        </h2>
+                        <div id="collapse${index}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                            aria-labelledby="heading${index}">
+                            <div class="accordion-body">
+                                <p><strong>Location:</strong> ${raceDetails.location}</p>
+                                <p><strong>Date:</strong> ${raceDetails.date}</p>
+                                <p><strong>Number of Cars:</strong> ${raceDetails.num_cars}</p>
+
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Car</th>
+                                            <th scope="col">Owner</th>
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="raceTableBody${index}">
+                                        ${cars.length > 0 ? cars.map(carAndOwner => `
+                                            <tr>
+                                                <td>${carAndOwner.car}</td>
+                                                <td>${carAndOwner.owner}</td>
+                                                <td>
+                                                    <button class="btn btn-danger btn-sm" onclick="removeCar('${raceName}', '${carAndOwner.car}')">
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('') : `<tr><td colspan="3">No cars in this race.</td></tr>`}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+
+                    raceAccordion.appendChild(accordionItem);
+                });
+            } else {
+                raceAccordion.innerHTML = "<p>No races found.</p>";
+            }
+
+        } catch (error) {
+            console.error("Error fetching races:", error);
+            alert("Failed to fetch races. Please try again later.");
+        }
+    });
+
+
+            /*
             // Populate race list (This is a placeholder for now)
             const raceListElement = document.getElementById("race-list");
             raceListElement.innerHTML = ''; // Clear previous content if any
@@ -123,6 +209,8 @@
             alert("Failed to fetch races. Please try again later.");
         }
     });
+
+    */
 /*
     // Function to handle car removal
     async function removeCarFromRace(raceName, carName) {

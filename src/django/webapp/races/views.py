@@ -133,7 +133,14 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
                 {"car": participant.car.name, "owner": participant.car_owner.username} for participant in participants
             ]
             
-            race_list[race.name] = cars_and_owners
+            race_list[race.name] = {
+                "details": {
+                    "location": race.location,
+                    "date": race.date.strftime("%Y-%m-%d"),  # Formatting date for JSON
+                    "num_cars": len(cars_and_owners)
+                },
+                "cars": cars_and_owners
+            }
             print(race_list)
             
         return Response(race_list)
