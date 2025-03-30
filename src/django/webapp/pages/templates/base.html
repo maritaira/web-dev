@@ -38,6 +38,14 @@
             <!-- Left Sidebar -->
             <nav class="col-md-2 sidebar">
                 <ul class="nav flex-column">
+                    {% if 'raceowner' in user_groups %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'pages:raceownerDash' %}">
+                                Race Owner View
+                            </a>
+                        </li>
+                    {% endif %}
+
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'pages:dashboard' %}">Dashboard</a>
                     </li>

@@ -143,6 +143,8 @@ class SignInView(APIView):
                     redirect_url = "/pages/dashboard/"
                 print(f"Successfully signed in as {user_info["Username"]}")
                 request.session['username'] = user_info["Username"]
+                request.session['user_groups'] = groups
+                #print("i love candy " + str(groups))
                 response = Response({"message": "Sign-in successful",
                                  "id_token": id_token, 
                                  "access_token": access_token, 

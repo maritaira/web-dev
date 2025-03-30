@@ -23,7 +23,7 @@
             color: white;
         }
         .sidebar .nav-link:hover {
-            background-color: #E7A523; /* Gold */
+            background-color: #b0cadd; /* Gold */
         }
         .main-content {
             margin-left: 250px; /* Same width as sidebar */
@@ -34,7 +34,23 @@
             color: white;
         }
         .sidebar .logout-btn:hover {
-            background-color: #E7A523; /* Gold */
+            background-color: #c8d7e6; /* Gold */
+        }
+
+        /* Custom styles for the switch */
+        .form-check.form-switch {
+            margin-top: 3px;
+        }
+        .form-check-input {
+            width: 60px; /* Increase the width of the toggle */
+            height: 17px; /* Increase the height of the toggle */
+            background-color: #5697d7; /* Make the switch color match the gold theme */
+        }
+        .form-check-input:checked {
+            background-color: #0f66a3; /* Gold when checked */
+        }
+        .form-check-label {
+            color: white; /* White text for the label */
         }
     </style>
 </head>
@@ -44,22 +60,27 @@
             <!-- Left Sidebar -->
             <nav class="col-md-2 sidebar">
                 <ul class="nav flex-column">
+                    {% if 'carowner' in user_groups %}
+                    <!-- RaceOwner View Button -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'pages:dashboard' %}"></i> Dashboard
+                        <a class="nav-link" href="{% url 'pages:dashboard' %}">
+                            Car Owner View
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" >My Races</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'pages:all_videos' %}">My Videos
-                        </a>
-                    </li>
+                {% endif %}
+
                     
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'pages:dashboard' %}">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'pages:all_videos' %}">My Videos</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" >Logout</a>
                     </li>
-
                 </ul>
             </nav>
 

@@ -40,7 +40,8 @@ def dashboard(request):
         return redirect('pages:dashboard')  # You can change this based on your flow
 
     # Pass the image context to the template
-    return render(request, 'dashboard.html', {'image': image})
+    user_groups = request.session.get('user_groups', [])
+    return render(request, 'dashboard.html', {'image': image, 'user_groups': user_groups})
 
 
 def all_videos(request):
@@ -252,4 +253,5 @@ def raceDash(request):
     #     race_data = response.context_data.get('race_data', [])
     
     # return render(request, 'raceDashboard.html', {'race_data': race_data})
-    return render(request, 'raceDashboard.html')
+    user_groups = request.session.get('user_groups', [])
+    return render(request, 'raceDashboard.html', {'user_groups': user_groups})
