@@ -119,9 +119,9 @@
                                     <input type="text" class="form-control" placeholder="Join Code">
                                     <button class="btn btn-success">Join Race</button>
                                 </div>
+                                {% endif %}
                                 <button class="btn btn-danger">Delete Car</button>
                             </div>
-                        {% endif %}
                     {% endwith %}
                 {% else %}
                     <p>No images available for this car.</p>
@@ -155,13 +155,16 @@
                 formData.append("images", image);
                 
             }
-            print(formData + "+")
+
+            console.log('Sending data:', formData)
+            
             const token = localStorage.getItem("id_token");
             if (!token) {
                 alert("You must be logged in to add images.");
                 return;
             }
 
+/*
             // Fetch CSRF token from cookies
             function getCSRFToken() {
                 let csrfToken = null;
@@ -174,13 +177,16 @@
                 return csrfToken;
             }
 
+            console.log(getCSRFToken())
+            */
+
             try {
                 const response = await fetch("/media/images/", {
                     method: "POST",
                     body: formData,
                     headers: {
                         "Authorization": `Bearer ${token}`,
-                        "X-CSRFToken": getCSRFToken(),  // Add CSRF token from cookies
+                        // "X-CSRFToken": getCSRFToken(),  // Add CSRF token from cookies
                     }
                 });
 

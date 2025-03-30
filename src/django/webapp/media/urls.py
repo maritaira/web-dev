@@ -18,13 +18,13 @@ urlpatterns = [
 def redirect_to_cars(request):
     return redirect('pages:all_cars')  # Redirect to My Cars page
 
-urlpatterns = [
-    path('api/', include(router.urls)),  # API endpoints for images/videos
+# urlpatterns = [
+#     path('api/', include(router.urls)),  # API endpoints for images/videos
     
-    # Redirect users if they try to access media directly
-    path('images/', redirect_to_cars),
-    path('videos/', redirect_to_cars),
-]
+#     # Redirect users if they try to access media directly
+#     path('images/', redirect_to_cars),
+#     path('videos/', redirect_to_cars),
+# ]
 
 # Ensure media files are not served in production
 if settings.DEBUG:

@@ -1,4 +1,6 @@
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -7,6 +9,7 @@ from django.core.files import File
 from .models import Image, Video
 from .serializers import ImageSerializer, VideoSerializer
 from webapp.storages import RacesBucketStorage
+from accounts.permissions import IsCarOwner, IsRaceOwner
 from rest_framework.decorators import api_view
 from races.models import Car
 
@@ -15,6 +18,7 @@ class ImageViewSet(ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = [IsCarOwner]
 
     def list(self, request):
         username = request.query_params.get("username")
@@ -30,10 +34,13 @@ class ImageViewSet(ModelViewSet):
         
         return Response({"car_names": car_names}, status=status.HTTP_200_OK)
 
+    @csrf_exempt
     def create(self, request, *args, **kwargs):
+        print("In media/images create()")
         car_name = request.data.get('car_name')
         images = request.FILES.getlist('images')
-        username = request.data.get('username')
+        # username = request.data.get('username')
+        username = request.user.username
 
         if not images:
             return Response({'error': 'No images provided.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -42,19 +49,24 @@ class ImageViewSet(ModelViewSet):
         
         # Find the car object by the car_name and username
         try:
+            print(f"Attempting to find car object with carname: {car_name}")
             car = Car.objects.get(name=car_name, owner__username=username)
         except Car.DoesNotExist:
             return Response({'error': 'Car not found for the given username.'}, status=status.HTTP_404_NOT_FOUND)
-
+        print(f"Retrieved car: {car.name}")
         uploads = []
         try:
             for image in images:
+                print("Attempting to get_serializer with car and image")
                 # Store image in the database under the specific car
-                serializer = self.get_serializer(data={'car': car, 'image': image})
+                serializer = self.get_serializer(data={'car': car.id, 'image': image})
+                print("Runningn is_valid()")
                 serializer.is_valid(raise_exception=True)
+                print("running perform_create with serializer")
                 self.perform_create(serializer)
                 uploads.append(serializer.data)
         except Exception as e:
+            print(str(e))
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(uploads, status=status.HTTP_201_CREATED)
