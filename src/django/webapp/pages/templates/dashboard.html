@@ -1,9 +1,27 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Car Owner Dashboard{% endblock %}
 
 {% block content %}
-    <h1>Dashboard</h1>
+<style>
+    .accordion {
+        width: 90%; /* Makes it responsive */
+        margin: 0; /* Centers it */
+    }
+    .accordion-button {
+        font-weight: bold;
+    }
+    .accordion .table-wrapper {
+        overflow-x: auto; /* Enables horizontal scrolling */
+        max-width: 100%; /* Prevents overflow */
+    }
+    
+    .accordion table {
+        width: 100%; /* Ensures table scales properly */
+        table-layout: auto;
+    }
+</style>
+<h1>Dashboard</h1>
 
 
     <!-- Displaying the uploaded image if available -->
@@ -16,14 +34,149 @@
     <div class="mt-4">
         <!-- Add Car Button -->
         <a href="{% url 'pages:new_car' %}">
-            <button type="button" class="btn btn-primary">Add Car</button>
+            <button type="button" class="btn btn-primary">Add New Car</button>
         </a>
-        
+        <br><br>
         <!-- Join Race Section -->
         <div class="mt-3">
-            <label for="race_code">Race Code:</label>
+            {% comment %} <label for="race_code">Race Code:</label> {% endcomment %}
             <input type="text" id="race_code" placeholder="Enter Race Code">
             <button type="button" class="btn btn-success">Join Race</button>
         </div>
     </div>
+    <div class="container">
+        <br><br>
+    <h2>My Races</h2>
+        <!-- List of Races (Placeholder for now) -->
+        <div id="raceAccordion" class="accordion mt-4">
+            <!-- The list of races will be dynamically populated here -->
+        </div>
+    </div>
+
+    <script>
+        // Check if the user is authenticated by verifying the idToken
+        document.addEventListener("DOMContentLoaded", async function() {
+            // Retrieve the idToken from localStorage
+            const idToken = localStorage.getItem("id_token");
+    
+            if (!idToken) {
+                alert("You must be logged in to access the Car Owner Dashboard.");
+                window.location.href = "/login/";  // Redirect to login page
+                return;
+            }
+    
+            // Fetch race data with the authorization token
+            try {
+                const response = await fetch("/carowner/my_races/", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + idToken,
+                        "Content-Type": "application/json"
+                    }
+                });
+    
+                if (!response.ok) {
+                    throw new Error("Unauthorized or failed to fetch races.");
+                }
+    
+                const data = await response.json();
+                console.log("Races Data:", data);
+    
+    
+                const raceAccordion = document.getElementById("raceAccordion");
+                raceAccordion.innerHTML = ''; // Clear previous content
+    
+                if (data && Object.keys(data).length > 0) {
+                    Object.keys(data).forEach((raceName, index) => {
+                        const raceDetails = data[raceName].details;
+                        const cars = data[raceName].cars;
+    
+                        // Create accordion item
+                        const accordionItem = document.createElement("div");
+                        accordionItem.classList.add("accordion-item");
+    
+                        accordionItem.innerHTML = `
+                            <h2 class="accordion-header" id="heading${index}">
+                                <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#collapse${index}" 
+                                    aria-expanded="${index === 0}" aria-controls="collapse${index}">
+                                    ${raceName}
+                                </button>
+                            </h2>
+                            <div id="collapse${index}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                                aria-labelledby="heading${index}">
+                                <div class="accordion-body">
+                                    <p><strong>Location:</strong> ${raceDetails.location}</p>
+                                    <p><strong>Date:</strong> ${raceDetails.date}</p>
+                                    <p><strong>Total Number of Cars:</strong> ${raceDetails.num_cars}</p>
+    
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Car</th>
+                                                <th scope="col"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="raceTableBody${index}">
+                                            ${cars.map(car => `
+                                                <tr>
+                                                    <td>${car}</td>
+                                                    <td class="text-end">
+                                                        <button class="btn btn-danger btn-sm" onclick="removeCar('${raceName}', '${car}')">
+                                                            Remove Car From Race
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            `)}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+    
+                        raceAccordion.appendChild(accordionItem);
+                    });
+                } else {
+                    raceAccordion.innerHTML = "<p>No races found.</p>";
+                }
+    
+            } catch (error) {
+                console.error("Error fetching races:", error);
+                alert("Failed to fetch races. Please try again later.");
+            }
+        });
+    
+    /*
+        // Function to handle car removal
+        async function removeCarFromRace(raceName, carName) {
+            const confirmRemoval = confirm(`Are you sure you want to remove ${carName} from ${raceName}?`);
+            if (!confirmRemoval) return;
+    
+            try {
+                const response = await fetch(`/races/remove_car/`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("id_token"),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "race_name": raceName,
+                        "car_name": carName
+                    })
+                });
+    
+                if (!response.ok) {
+                    throw new Error("Failed to remove the car from the race.");
+                }
+    
+                alert(`${carName} has been removed from ${raceName}.`);
+                window.location.reload(); // Refresh to update the table
+            } catch (error) {
+                console.error("Error removing car:", error);
+                alert("Could not remove car. Please try again.");
+            }
+        }
+            */
+    
+    </script>
 {% endblock %}
