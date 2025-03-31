@@ -19,6 +19,8 @@ from django.urls import path, include
 from . import views
 from django.contrib import admin
 
+handler404 = "webapp.views.custom_404_view"  # Register the 404 handler
+
 urlpatterns = [
     path('', views.index, name='index'),  # Route for the app's homepage
     path('pages/', include('pages.urls')),
@@ -28,6 +30,8 @@ urlpatterns = [
     path('auth/', include('accounts.urls')),
     path('', include('races.urls'))
 ]
+
+
 
 ##controls paths to apps
 
