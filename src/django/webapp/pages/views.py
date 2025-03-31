@@ -58,8 +58,10 @@ def carowner_videos(request):
 
 def raceowner_videos(request):
     videos = Video.objects.all()
+    user_groups = request.session.get('user_groups', [])
     context = {
-        'videos': videos
+        'videos': videos,
+        'user_groups': user_groups
     }
 
     return render(request, 'raceowner_videos.html', context)
