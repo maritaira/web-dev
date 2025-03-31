@@ -46,8 +46,12 @@ def dashboard(request):
 
 def carowner_videos(request):
     videos = Video.objects.all()
+    user_groups = request.session.get('user_groups', [])
+    
+    # Combine user_groups with the context dictionary
     context = {
-        'videos': videos
+        'videos': videos,
+        'user_groups': user_groups
     }
 
     return render(request, 'carowner_videos.html', context)
@@ -59,7 +63,6 @@ def raceowner_videos(request):
     }
 
     return render(request, 'raceowner_videos.html', context)
-
 
 
 def login_pg(request):
@@ -74,11 +77,14 @@ def create_race(request):
     #     return render(request, 'create_race.html')
     
     # return redirect('index')
-    return render(request, 'create_race.html')
+    user_groups = request.session.get('user_groups', [])
+
+    return render(request, 'create_race.html', {'user_groups': user_groups})
 
 def new_car(request):
-    return render(request, 'new_car.html')
+    user_groups = request.session.get('user_groups', [])
 
+    return render(request, 'new_car.html', {'user_groups': user_groups})
 
 
 
@@ -240,8 +246,9 @@ def all_cars(request):
 
         print(car_images[car.name])
 
-
-    return render(request, 'all_cars.html', {'username': username, 'cars': cars, 'car_images': car_images})
+    user_groups = request.session.get('user_groups', [])
+    
+    return render(request, 'all_cars.html', {'username': username, 'cars': cars, 'car_images': car_images, 'user_groups': user_groups})
 
 def raceDash(request):
     # view = RaceOwnerMyRacesView.as_view()
@@ -259,3 +266,4 @@ def raceDash(request):
     # return render(request, 'raceDashboard.html', {'race_data': race_data})
     user_groups = request.session.get('user_groups', [])
     return render(request, 'raceDashboard.html', {'user_groups': user_groups})
+
