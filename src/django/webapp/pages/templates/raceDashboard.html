@@ -123,6 +123,13 @@
                                         `).join('') : `<tr><td colspan="3">No cars in this race.</td></tr>`}
                                     </tbody>
                                 </table>
+
+                                <!-- Start Training Button (Only visible if number of cars matches num_cars) -->
+                                <div class="btn-container">
+                                    <button class="btn btn-success btn-lg" id="startTrainingBtn${index}" style="display: ${cars.length === raceDetails.num_cars ? 'block' : 'none'}">
+                                        Start Training
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;

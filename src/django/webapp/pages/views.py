@@ -4,7 +4,7 @@ from .forms import ImageUploadForm
 from django.http import HttpResponse, JsonResponse
 import requests
 from media.models import Video, Image
-from races.models import Car
+from races.models import Car, Race
 import requests
 import boto3
 from accounts.middlewares import get_cognito_user
@@ -44,13 +44,21 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'image': image, 'user_groups': user_groups})
 
 
-def all_videos(request):
+def carowner_videos(request):
     videos = Video.objects.all()
     context = {
         'videos': videos
     }
 
-    return render(request, 'all_videos.html', context)
+    return render(request, 'carowner_videos.html', context)
+
+def raceowner_videos(request):
+    videos = Video.objects.all()
+    context = {
+        'videos': videos
+    }
+
+    return render(request, 'raceowner_videos.html', context)
 
 
 
@@ -74,21 +82,17 @@ def new_car(request):
 
 
 
-
-def r_my_races(request):
-    user = request.user
-    
-    return render(request, 'r_dashboard.html')
-
-
-
 MEDIA_API_URL = "http://127.0.0.1:8000/media/"
 
 def play_video(request):
-    race_title = request.GET.get('race')
+    next = request.GET.get('next')
+    race_id = request.GET.get('race')
     
+    race = Race.objects.filter(id=race_id).first()
     # Fetch the video corresponding to the race title from the database
-    video = Video.objects.filter(race=race_title).first()
+    video = Video.objects.filter(race=race).first()
+    # video_url = request.GET.get('video_url')
+    # video = Video.objects.filter(video_url=video_url)
 
     if not video:
         return render(request, 'play_video.html', {'error': "Video not found."})
@@ -96,7 +100,7 @@ def play_video(request):
     # Pass video URL to the template for rendering
     video_url = video.file.url
 
-    return render(request, 'play_video.html', {'race_title': race_title, 'video_url': video_url})
+    return render(request, 'play_video.html', {'race_title': video.race.name, 'video_url': video_url, 'next': next})
 
 
 def display_images(request):

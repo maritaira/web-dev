@@ -1,5 +1,6 @@
 from django.db import models
 from webapp.storages import CarsBucketStorage, RacesBucketStorage
+from django.conf import settings
 
 # Create your models here.
 
@@ -21,7 +22,7 @@ class Image(models.Model):
         return f"Image {self.image.name}"
 
 def video_upload_to(instance, filename):
-    path = f"{instance.race}/{filename}"
+    path = f"{instance.race.owner.username}/{instance.race.name}/video/{filename}"
     print(f"Uploading Video to: {path}")
     return path
 
@@ -31,7 +32,10 @@ def thumbnail_upload_to(instance, filename):
     return path
 
 class Video(models.Model):
-    race = models.CharField(max_length=255)
+    # race.videos
+    race = models.ForeignKey('races.Race', on_delete=models.CASCADE,  null=True, blank=True, related_name='videos')
+    # user.videos
+    raceowner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name="videos")
     # file = models.FileField(storage=RacesBucketStorage, upload_to=video_upload_to)
     file = models.FileField(storage=RacesBucketStorage(), upload_to=video_upload_to)
     upload_time = models.DateTimeField(auto_now_add=True)

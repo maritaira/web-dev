@@ -162,6 +162,7 @@ class CarOwnerMyRacesView(generics.ListAPIView):
         for participation in participations:
             race = participation.race
             car = participation.car
+            owner = f"{race.owner.name} {race.owner.lastname}"
             
             if race.name not in race_list:
                 race_list[race.name] = {
@@ -169,6 +170,7 @@ class CarOwnerMyRacesView(generics.ListAPIView):
                         "location": race.location,
                         "date": race.date.strftime("%Y-%m-%d"),
                         "num_cars": race.num_cars,
+                        "owner": owner
                     },
                     "cars": []
                 }

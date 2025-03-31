@@ -20,7 +20,7 @@ class VideoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Video
-        fields = ['race', 'video_url']
+        fields = ['race', 'user', 'video_url']
 
     def get_video_url(self, obj):
         # Ensure the URL is properly constructed
