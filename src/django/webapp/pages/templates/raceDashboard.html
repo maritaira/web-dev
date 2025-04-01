@@ -106,6 +106,7 @@
                                         <tr>
                                             <th scope="col">Car</th>
                                             <th scope="col">Owner</th>
+                                            <th scope="col">Username</th>
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
@@ -113,6 +114,7 @@
                                         ${cars.length > 0 ? cars.map(carAndOwner => `
                                             <tr>
                                                 <td>${carAndOwner.car}</td>
+                                                <td>${carAndOwner.firstname} ${carAndOwner.lastname}</td>
                                                 <td>${carAndOwner.owner}</td>
                                                 <td class="text-end">
                                                     <button class="btn btn-danger btn-sm" onclick="removeCar('${raceName}', '${carAndOwner.car}')">

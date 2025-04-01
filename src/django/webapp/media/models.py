@@ -26,11 +26,6 @@ def video_upload_to(instance, filename):
     print(f"Uploading Video to: {path}")
     return path
 
-def thumbnail_upload_to(instance, filename):
-    path = f"{instance.race}/{filename}"
-    print(f"Uploading Thumbnail to: {path}")
-    return path
-
 class Video(models.Model):
     # race.videos
     race = models.ForeignKey('races.Race', on_delete=models.CASCADE,  null=True, blank=True, related_name='videos')

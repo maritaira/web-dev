@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.core.files.base import ContentFile
 from django.utils.crypto import get_random_string
-from rest_framework import generics, status
+from rest_framework import generics, status, serializers
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
@@ -49,6 +49,12 @@ class AddCarView(generics.CreateAPIView):
         print("In perform_create for AddCar")
         print(f"Checking user: {self.request.user.username}")
         print(f"Car data: {self.request.data}")
+        name = self.request.data.get('name')
+        
+        # Check if a car with the same name already exists for this user
+        if Car.objects.filter(owner=self.request.user, name=name).exists():
+            print(f"User {self.request.user.username} already owns a car named '{name}'")
+            raise serializers.ValidationError({"message": "You already own a car with this name. Please try again with a new car name."})
         
         serializer = CarSerializer(data=self.request.data)
         if serializer.is_valid():
@@ -130,7 +136,12 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
             participants = RaceParticipant.objects.filter(race=race)
             
             cars_and_owners = [
-                {"car": participant.car.name, "owner": participant.car_owner.username} for participant in participants
+                {
+                    "car": participant.car.name, 
+                    "owner": participant.car_owner.username, 
+                    "firstname": participant.car_owner.name, 
+                    "lastname": participant.car_owner.lastname
+                } for participant in participants
             ]
             
             race_list[race.name] = {

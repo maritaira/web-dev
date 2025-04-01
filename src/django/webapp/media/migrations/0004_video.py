@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('race', models.CharField(max_length=255)),
                 ('title', models.CharField(max_length=255)),
                 ('file', models.FileField(storage=webapp.storages.RacesBucketStorage(), upload_to=media.models.video_upload_to)),
-                ('thumbnail', models.ImageField(blank=True, null=True, storage=webapp.storages.RacesBucketStorage(), upload_to=media.models.thumbnail_upload_to)),
+                ('thumbnail', models.ImageField(blank=True, null=True, storage=webapp.storages.RacesBucketStorage())),
                 ('upload_time', models.DateTimeField(auto_now_add=True)),
             ],
         ),
