@@ -143,6 +143,7 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
                     "owner": participant.car_owner.username, 
                     "firstname": participant.car_owner.name, 
                     "lastname": participant.car_owner.lastname,
+                    "email": participant.car_owner.email,
                     "id": participant.car.id
                 } for participant in participants
             ]
@@ -198,7 +199,8 @@ class CarOwnerMyRacesView(generics.ListAPIView):
                     race_list[race.name]["other_cars"].append({
                         "car_name": participant.car.name,
                         "owner": f"{participant.car_owner.name} {participant.car_owner.lastname}",
-                        "username": participant.car_owner.username
+                        "username": participant.car_owner.username,
+                        "email": participant.car_owner.email,
                     })
             
             race_list[race.name]["my_cars"].append({

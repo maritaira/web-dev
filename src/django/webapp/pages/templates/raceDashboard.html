@@ -107,6 +107,7 @@
                                             <th scope="col">Car</th>
                                             <th scope="col">Owner</th>
                                             <th scope="col">Username</th>
+                                            <th scope="col">Email</th>
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
@@ -116,6 +117,7 @@
                                                 <td>${carAndOwner.car}</td>
                                                 <td>${carAndOwner.firstname} ${carAndOwner.lastname}</td>
                                                 <td>${carAndOwner.owner}</td>
+                                                <td>${carAndOwner.email}</td>
                                                 <td class="text-end">
                                                     <button class="btn btn-danger btn-sm" onclick="removeCarFromRace('${raceDetails.id}', '${carAndOwner.id}', '${raceName}', '${carAndOwner.car}')">
                                                         Remove
