@@ -66,7 +66,15 @@ head, body{
                 messageDiv.innerText = "Successfully added car and images!";
             } else {
                 messageDiv.className = "alert alert-danger";
-                messageDiv.innerText = result.error || "Failed to add car.";
+                if (result.message) {
+                    messageDiv.innerText = result.message;
+                } else if (result.detail) { 
+                    // Handle generic DRF error messages
+                    messageDiv.innerText = result.detail;
+                } else {
+                    messageDiv.innerText = "Failed to add car. Please try again.";
+                }
+                // messageDiv.innerText = result.error || "Failed to add car.";
             }
         } catch (error) {
             console.error("Error:", error);

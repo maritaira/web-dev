@@ -5,6 +5,7 @@ urlpatterns = [
     path('create-race/', views.CreateRaceView.as_view(), name='create_race'),
     path('add-car/', views.AddCarView.as_view(), name='add_car'),
     path('join-race/', views.JoinRaceView.as_view(), name='join_race'),
+    path('races/remove-car/', views.RemoveCarFromRaceView.as_view(), name='remove_car_from_race'),
     path("races/<str:race_name>/cars/", views.ListCarsInRaceView.as_view(), name="cars-in-race"),
     path("cars/<str:car_name>/races/", views.ListRacesCarJoinedView.as_view(), name="races-car-joined"),
     path("users/<str:username>/races/", views.ListRacesUserJoinedView.as_view(), name="races-user-joined"),

@@ -17,12 +17,14 @@ Including another URLconf
 
 from django.urls import path, include
 from . import views
+from pages.views import login_pg
 from django.contrib import admin
 
 handler404 = "webapp.views.custom_404_view"  # Register the 404 handler
 
 urlpatterns = [
-    path('', views.index, name='index'),  # Route for the app's homepage
+    path('', login_pg, name='login'),
+    # path('', views.index, name='index'),  # Route for the app's homepage
     path('pages/', include('pages.urls')),
     ##path('admin/', admin.site.urls),
     path('media/', include('media.urls')),

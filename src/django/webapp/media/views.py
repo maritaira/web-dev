@@ -230,34 +230,6 @@ class VideoViewSet(ModelViewSet):
         # Filter videos in the database that belong to the user's races
         videos = Video.objects.filter(race__in=user_races)
 
-        # # Fetch existing race titles from the database
-        # existing_race_titles = {video.race.name for video in Video.objects.all()}
-
-        # # Sync videos from S3
-        # race_bucket = RacesBucketStorage()
-        # valid_ext = (".mp4", ".mov", ".avi", ".mkv")  # Supported video extensions
-        # all_races = race_bucket.listdir('')[0]  # List all races in the root directory of your S3 bucket
-        # print(f"All races in S3: {all_races}")
-
-        # new_videos = []
-        # for race in all_races:
-        #     if race not in existing_race_titles:  # Check if race title already exists in the DB
-        #         subdirectory = f"{race.owner.username}/{race.name}/"
-        #         files = race_bucket.listdir(subdirectory)[1]  # Get list of files in the subdirectory
-
-        #         # Find a video file in the subdirectory
-        #         video_file = next((f for f in files if f.lower().endswith(valid_ext)), None)
-                
-        #         if video_file:
-        #             file_path = f"{subdirectory}{video_file}"
-
-        #             # Create video entry in the database if not found
-        #             print(f"New video found for race: {race}")
-        #             new_video = Video.objects.create(race=race, file=file_path)
-        #             new_videos.append(new_video)
-
-        # # After checking and creating new videos, get all videos in the database
-        # videos = Video.objects.all()
         video_list = [{"race": video.race.name, "video_url": video.file.url, "race_id": video.race.id} for video in videos]
         
         return Response(video_list, status=status.HTTP_200_OK)
@@ -294,45 +266,3 @@ class VideoViewSet(ModelViewSet):
         print(f"Videos: {videos}")
         video_data = [{'race': video.race, 'file': video.file.url} for video in videos]
         return Response(video_data)   
-
-'''
-    def create(self, request, *args, **kwargs):
-        race_name = request.data.get('race_name')
-        if not race:
-            return Response({'error': 'race name required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        race = Race.objects.filter(name=race_name, owner=request.user)
-        
-        race_bucket = RacesBucketStorage()
-        subdirectory = f"{race.owner}/{race}/"
-        
-        # Check S3 for videos
-        files = race_bucket.listdir(subdirectory)[1]
-        valid_ext = (".mp4", ".mov", ".avi", ".mkv")
-        video_file = next((f for f in files if f.lower().endswith(valid_ext)), None)
-    
-        if not video_file:
-            return Response({"error": "No valid video file found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        path = f"{subdirectory}{video_file}"
-        full_path = race_bucket.url(path)
-        
-        try:
-            video = race_bucket.open(path)  # Fetch the file from S3
-        except Exception as e:
-            return Response({"error": f"Error fetching video file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-    
-        # Create video object and save it to the database
-        serializer = self.get_serializer(data={'race': race, 'file': File(video, name=video_file)})
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Save video to DB
-        self.perform_create(serializer)
-        
-        # Video created and saved, now return the data
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-'''
-
