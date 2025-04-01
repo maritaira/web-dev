@@ -84,7 +84,8 @@
                 if (data && Object.keys(data).length > 0) {
                     Object.keys(data).forEach((raceName, index) => {
                         const raceDetails = data[raceName].details;
-                        const cars = data[raceName].cars;
+                        const myCars = data[raceName].my_cars;
+                        const otherCars = data[raceName].other_cars;
     
                         // Create accordion item
                         const accordionItem = document.createElement("div");
@@ -114,18 +115,26 @@
                                             </tr>
                                         </thead>
                                         <tbody id="raceTableBody${index}">
-                                            ${cars.map(car => `
+                                            ${myCars.map(car => `
                                                 <tr>
-                                                    <td>${car}</td>
+                                                    <td>${car.car_name}</td>
                                                     <td class="text-end">
-                                                        <button class="btn btn-danger btn-sm" onclick="removeCar('${raceName}', '${car}')">
+                                                        <button class="btn btn-danger btn-sm" onclick="removeCar('${raceDetails.id}', '${car.id}', '${raceName}', '${car.car_name}')">
                                                             Remove Car From Race
                                                         </button>
                                                     </td>
                                                 </tr>
-                                            `)}
+                                            `).join('')}
                                         </tbody>
                                     </table>
+                                    <h5>Other Cars in this Race:</h5>
+                                    <ul>
+                                        ${otherCars.map(car => `
+                                            <li>
+                                                <strong>${car.car_name}</strong> -  ${car.owner}  (${car.username})
+                                            </li>
+                                        `).join('')}
+                                    </ul>
                                 </div>
                             </div>
                         `;
@@ -141,35 +150,41 @@
                 alert("Failed to fetch races. Please try again later.");
             }
         });
-    
-    /*
+/*
         // Function to handle car removal
-        async function removeCarFromRace(raceName, carName) {
+        async function removeCarFromRace(raceId, carId, raceName, carName) {
+            // Retrieve the idToken from localStorage
+            const idToken = localStorage.getItem("id_token");
+    
+            if (!idToken) {
+                alert("You must be logged in to remove a car.");
+                window.location.href = "/login/";  // Redirect to login page
+                return;
+            }
+
             const confirmRemoval = confirm(`Are you sure you want to remove ${carName} from ${raceName}?`);
             if (!confirmRemoval) return;
-    
+
             try {
-                const response = await fetch(`/races/remove_car/`, {
-                    method: "POST",
+                const response = await fetch("/races/remove-car/", {
+                    method: "DELETE",
                     headers: {
-                        "Authorization": "Bearer " + localStorage.getItem("id_token"),
-                        "Content-Type": "application/json"
+                        "Authorization": "Bearer " + idToken,
+                        "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({
-                        "race_name": raceName,
-                        "car_name": carName
-                    })
+                    body: JSON.stringify({ race_id: raceId, car_id: carId })  // Sending IDs in the request body
                 });
-    
-                if (!response.ok) {
-                    throw new Error("Failed to remove the car from the race.");
+        
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Success:", data.message);
+                    window.location.reload();  // Refresh the page after successful deletion
+                } else {
+                    const errorData = await response.json();
+                    console.error("Error:", errorData.error);
                 }
-    
-                alert(`${carName} has been removed from ${raceName}.`);
-                window.location.reload(); // Refresh to update the table
             } catch (error) {
-                console.error("Error removing car:", error);
-                alert("Could not remove car. Please try again.");
+                console.error("Request failed:", error);
             }
         }
             */

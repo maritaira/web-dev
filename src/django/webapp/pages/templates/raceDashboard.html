@@ -117,7 +117,7 @@
                                                 <td>${carAndOwner.firstname} ${carAndOwner.lastname}</td>
                                                 <td>${carAndOwner.owner}</td>
                                                 <td class="text-end">
-                                                    <button class="btn btn-danger btn-sm" onclick="removeCar('${raceName}', '${carAndOwner.car}')">
+                                                    <button class="btn btn-danger btn-sm" onclick="removeCar('${raceDetails.id}', '${carAndOwner.id}', '${raceName}', '${carAndOwner.car}')">
                                                         Remove
                                                     </button>
                                                 </td>
@@ -148,37 +148,42 @@
         }
     });
 
-/*
     // Function to handle car removal
-    async function removeCarFromRace(raceName, carName) {
+    async function removeCarFromRace(raceId, carId, raceName, carName) {
+        // Retrieve the idToken from localStorage
+        const idToken = localStorage.getItem("id_token");
+    
+        if (!idToken) {
+            alert("You must be logged in to remove a car.");
+            window.location.href = "/login/";  // Redirect to login page
+            return;
+        }
+        
         const confirmRemoval = confirm(`Are you sure you want to remove ${carName} from ${raceName}?`);
         if (!confirmRemoval) return;
 
         try {
-            const response = await fetch(`/races/remove_car/`, {
-                method: "POST",
+            const response = await fetch("/races/remove-car/", {
+                method: "DELETE",
                 headers: {
-                    "Authorization": "Bearer " + localStorage.getItem("id_token"),
-                    "Content-Type": "application/json"
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    "race_name": raceName,
-                    "car_name": carName
-                })
+                body: JSON.stringify({ race_id: raceId, car_id: carId })  // Sending IDs in the request body
             });
-
-            if (!response.ok) {
-                throw new Error("Failed to remove the car from the race.");
+    
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Success:", data.message);
+                window.location.reload();  // Refresh the page after successful deletion
+            } else {
+                const errorData = await response.json();
+                console.error("Error:", errorData.error);
             }
-
-            alert(`${carName} has been removed from ${raceName}.`);
-            window.location.reload(); // Refresh to update the table
         } catch (error) {
-            console.error("Error removing car:", error);
-            alert("Could not remove car. Please try again.");
+            console.error("Request failed:", error);
         }
     }
-        */
 
     function copyJoinCode(raceId) {
         const joinCodeText = document.getElementById(`join-code-${raceId}`).innerText;

@@ -4,10 +4,12 @@ from django.utils.crypto import get_random_string
 from rest_framework import generics, status, serializers
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from .models import Race, Car, RaceParticipant
 from .serializers import RaceSerializer, CarSerializer, RaceParticipantSerializer
 from accounts.permissions import IsCarOwner, IsRaceOwner
+from accounts.auth_backends import CognitoJWTAuthentication
 from media.views import ImageViewSet
 from media.models import Image
 from media.serializers import ImageSerializer
@@ -140,7 +142,8 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
                     "car": participant.car.name, 
                     "owner": participant.car_owner.username, 
                     "firstname": participant.car_owner.name, 
-                    "lastname": participant.car_owner.lastname
+                    "lastname": participant.car_owner.lastname,
+                    "id": participant.car.id
                 } for participant in participants
             ]
             
@@ -149,7 +152,8 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
                     "location": race.location,
                     "date": race.date.strftime("%Y-%m-%d"),  # Formatting date for JSON
                     "num_cars": race.num_cars,
-                    "join_code": race.join_code
+                    "join_code": race.join_code,
+                    "id": race.id
                 },
                 "cars": cars_and_owners
             }
@@ -181,15 +185,47 @@ class CarOwnerMyRacesView(generics.ListAPIView):
                         "location": race.location,
                         "date": race.date.strftime("%Y-%m-%d"),
                         "num_cars": race.num_cars,
-                        "owner": owner
+                        "owner": owner,
+                        "id": race.id
                     },
-                    "cars": []
+                    "my_cars": [],
+                    "other_cars": []
                 }
+                
+                # Get all participants in the race, but exclude the user's car
+                other_participants = RaceParticipant.objects.filter(race=race).exclude(car_owner=carowner).select_related("car", "car_owner")
+                for participant in other_participants:
+                    race_list[race.name]["other_cars"].append({
+                        "car_name": participant.car.name,
+                        "owner": f"{participant.car_owner.name} {participant.car_owner.lastname}",
+                        "username": participant.car_owner.username
+                    })
             
-            race_list[race.name]["cars"].append(car.name)
+            race_list[race.name]["my_cars"].append({
+                "id": car.id,
+                "car_name": car.name
+            })
+            
         print(race_list)
             
         return Response(race_list)
+    
+    
+class RemoveCarFromRaceView(APIView):
+    authentication_classes = [CognitoJWTAuthentication]
+    
+    def delete(self, request):       
+        race_id = request.data.get("race_id")
+        car_id = request.data.get("car_id")
+
+        if not race_id or not car_id:
+            return Response({"error": "Race ID and Car ID are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        participant = RaceParticipant.objects.filter(race=race_id, car=car_id)
+        if participant.exists():
+            participant.delete()
+            return Response({"message": "Car removed from race successfully."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "Car not found in race."}, status=status.HTTP_404_NOT_FOUND)
         
     
 
