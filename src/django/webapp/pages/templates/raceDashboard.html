@@ -95,8 +95,8 @@
 
                                 <div class="join-code">
                                     <strong>Join Code:</strong>
-                                    <span id="join-code-{{ race.id }}">${raceDetails.join_code}</span>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyJoinCode('{{ race.id }}')">
+                                    <span id="join-code-${raceDetails.id}">${raceDetails.join_code}</span>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyJoinCode(${raceDetails.id})">
                                         <i class="bi bi-clipboard"></i> Copy
                                     </button>
                                 </div>
@@ -117,7 +117,7 @@
                                                 <td>${carAndOwner.firstname} ${carAndOwner.lastname}</td>
                                                 <td>${carAndOwner.owner}</td>
                                                 <td class="text-end">
-                                                    <button class="btn btn-danger btn-sm" onclick="removeCar('${raceDetails.id}', '${carAndOwner.id}', '${raceName}', '${carAndOwner.car}')">
+                                                    <button class="btn btn-danger btn-sm" onclick="removeCarFromRace('${raceDetails.id}', '${carAndOwner.id}', '${raceName}', '${carAndOwner.car}')">
                                                         Remove
                                                     </button>
                                                 </td>
@@ -172,9 +172,8 @@
                 body: JSON.stringify({ race_id: raceId, car_id: carId })  // Sending IDs in the request body
             });
     
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Success:", data.message);
+            if (response.status === 204) {
+                console.log("Success: Car successfully removed");
                 window.location.reload();  // Refresh the page after successful deletion
             } else {
                 const errorData = await response.json();

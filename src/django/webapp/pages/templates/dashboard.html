@@ -119,7 +119,7 @@
                                                 <tr>
                                                     <td>${car.car_name}</td>
                                                     <td class="text-end">
-                                                        <button class="btn btn-danger btn-sm" onclick="removeCar('${raceDetails.id}', '${car.id}', '${raceName}', '${car.car_name}')">
+                                                        <button class="btn btn-danger btn-sm" onclick="removeCarFromRace('${raceDetails.id}', '${car.id}', '${raceName}', '${car.car_name}')">
                                                             Remove Car From Race
                                                         </button>
                                                     </td>
@@ -150,7 +150,7 @@
                 alert("Failed to fetch races. Please try again later.");
             }
         });
-/*
+
         // Function to handle car removal
         async function removeCarFromRace(raceId, carId, raceName, carName) {
             // Retrieve the idToken from localStorage
@@ -175,9 +175,8 @@
                     body: JSON.stringify({ race_id: raceId, car_id: carId })  // Sending IDs in the request body
                 });
         
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log("Success:", data.message);
+                if (response.status == 204) {
+                    console.log("Success: Car removed successfully");
                     window.location.reload();  // Refresh the page after successful deletion
                 } else {
                     const errorData = await response.json();
@@ -187,7 +186,7 @@
                 console.error("Request failed:", error);
             }
         }
-            */
+
     
     </script>
 {% endblock %}
