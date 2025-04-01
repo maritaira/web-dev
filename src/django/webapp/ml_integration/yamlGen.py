@@ -2,7 +2,7 @@ import yaml
 import uuid
 
 def get_user_input():
-    full_name = input("Enter your full name: ")
+    # full_name = input("Enter your full name: ")
     num_cars = int(input("Enter number of cars: "))
     
     classes = []
@@ -11,7 +11,7 @@ def get_user_input():
         classes.append({"id": i+1, "label": label})
     
     data = {
-        "user": {"full_name": full_name},
+        # "user": {"full_name": full_name},
         "num_classes": num_cars,
         "classes": classes
     }

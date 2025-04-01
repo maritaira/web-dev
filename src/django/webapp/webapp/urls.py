@@ -28,7 +28,8 @@ urlpatterns = [
     path('media/', include('media.urls')),
     path('accounts/', include('accounts.urls')),
     path('auth/', include('accounts.urls')),
-    path('', include('races.urls'))
+    path('', include('races.urls')),
+    path('ml_integration/', include('ml_integration.urls'))
 ]
 
 
