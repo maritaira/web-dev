@@ -3,14 +3,13 @@ import json
 # Create your views here.
 from django.http import HttpResponse, JsonResponse
 import subprocess
-from races.models import Race, Car
+from races.models import Race, Car, RaceParticipant
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from .data_split import split_dataset_s3
+from django.conf import settings
 
 
-
-def index(request):
-    return HttpResponse("Hello, world. You're at the polls index.")
 
 # def generate_yaml(race_id):
 #     """Generates a YAML file with race and car details"""
@@ -35,17 +34,36 @@ def index(request):
 
 #     return yaml_filename
 
+
+def get_user_class_pairs(race_id):
+    participants = RaceParticipant.objects.filter(race=race_id)
+    
+    print("received participants")
+    
+    pairs = []
+    
+    for participant in participants:
+        pairs.append((participant.car_owner.username, participant.car.name))
+    
+    print(pairs)
+        
+    return pairs
+
 @csrf_exempt
 def start_training(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
             race_id = data.get("race_id")
+            race_name = data.get("race_name")
+            owner = request.user.username
             num_cars = data.get("num_cars")
             car_names = data.get("car_names")
 
             print("🔥 Training Request Received in ml_integration/views.py")
             print("Race ID:", race_id)
+            print("Race Name: ", race_name)
+            print("OWNER :", owner)
             print("Number of Cars:", num_cars)
             print("Car Names:", car_names)
 
@@ -66,18 +84,28 @@ def start_training(request):
             if yaml_process.returncode != 0:
                 return JsonResponse({"error": "yamlGen.py failed", "details": yaml_process.stderr}, status=500)
 
-            # Run data_split.py
-            split_process = subprocess.run(
-                ["python3", "./ml_integration/data_split.py"],  # Ensure correct path
-                capture_output=True,
-                text=True
-            )
+            # Data Split
+            
+            src_bucket = settings.AWS_STORAGE_CARS_BUCKET_NAME
+            dst_bucket = settings.AWS_STORAGE_RACES_BUCKET_NAME
+            source_prefix = ""
+            dst_prefix = f"{owner}/{race_name}/dataset/"
+            allowed_user_class_pairs = get_user_class_pairs(race_id)
+            
+            split_dataset_s3(src_bucket, dst_bucket, source_prefix, dst_prefix, allowed_user_class_pairs=allowed_user_class_pairs)
+            
+            # # Run data_split.py
+            # split_process = subprocess.run(
+            #     ["python3", "./ml_integration/data_split.py"],  # Ensure correct path
+            #     capture_output=True,
+            #     text=True
+            # )
 
-            print("📂 data_split.py Output:", split_process.stdout)
-            print("⚠️ data_split.py Error (if any):", split_process.stderr)
+            # print("📂 data_split.py Output:", split_process.stdout)
+            # print("⚠️ data_split.py Error (if any):", split_process.stderr)
 
-            if split_process.returncode != 0:
-                return JsonResponse({"error": "data_split.py failed", "details": split_process.stderr}, status=500)
+            # if split_process.returncode != 0:
+            #     return JsonResponse({"error": "data_split.py failed", "details": split_process.stderr}, status=500)
 
             return JsonResponse({"message": "Training process started successfully"})
 

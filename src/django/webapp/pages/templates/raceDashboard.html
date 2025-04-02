@@ -124,7 +124,7 @@
                                                     </button>
                                                 </td>
                                             </tr>
-                                        `).join('') : `<tr><td colspan="3">No cars in this race.</td></tr>`}
+                                        `).join('') : `<tr><td colspan="4">No cars in this race.</td></tr>`}
                                     </tbody>
                                 </table>
 
@@ -133,7 +133,7 @@
                                     <button class="btn btn-success btn-lg" 
                                         id="startTrainingBtn${index}" 
                                         style="display: ${cars.length === raceDetails.num_cars ? 'block' : 'none'}"
-                                        onclick="startTraining(${raceDetails.id}, ${raceDetails.num_cars}, '${cars.map(car => car.car).join(',')}')">
+                                        onclick="startTraining(${raceDetails.id}, '${raceName}', ${raceDetails.num_cars}, '${cars.map(car => car.car).join(',')}')">
                                         Start Training
                                     </button>
                                 </div>
@@ -198,50 +198,52 @@
         });
     }
 
-    async function startTraining(raceId, numCars, carNames) {
-    console.log("Start Training Clicked!");
-    console.log("Race ID:", raceId);
-    console.log("Number of Cars:", numCars);
-    console.log("Car Names:", carNames);
+    async function startTraining(raceId, raceName, numCars, carNames) {
+        console.log("Start Training Clicked!");
+        console.log("Race ID:", raceId);
+        console.log("Race Name:", raceName);
+        console.log("Number of Cars:", numCars);
+        console.log("Car Names:", carNames);
 
-    const idToken = localStorage.getItem("id_token");
-    if (!idToken) {
-        alert("You must be logged in to start training.");
-        window.location.href = "/login/";
-        return;
-    }
-
-    if (!confirm(`Start training for ${numCars} cars in Race ID: ${raceId}?`)) {
-        return;
-    }
-
-    try {
-        const response = await fetch("/ml_integration/start-training/", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + idToken,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ 
-                race_id: raceId, 
-                num_cars: numCars, 
-                car_names: carNames.split(',') 
-            })
-        });
-
-        const data = await response.json();
-        console.log("Response Data:", data);
-
-        if (response.ok) {
-            alert(data.message);
-        } else {
-            alert(`Error: ${data.error}`);
+        const idToken = localStorage.getItem("id_token");
+        if (!idToken) {
+            alert("You must be logged in to start training.");
+            window.location.href = "/login/";
+            return;
         }
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Failed to start training. Please try again.");
+
+        if (!confirm(`Start training for ${numCars} cars in ${raceName}?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/ml_integration/start-training/", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ 
+                    race_id: raceId, 
+                    race_name: raceName,
+                    num_cars: numCars, 
+                    car_names: carNames.split(',') 
+                })
+            });
+
+            const data = await response.json();
+            console.log("Response Data:", data);
+
+            if (response.ok) {
+                alert(data.message);
+            } else {
+                alert(`Error: ${data.error}`);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Failed to start training. Please try again.");
+        }
     }
-}
 
 </script>
 {% endblock %}
