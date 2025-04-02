@@ -114,7 +114,7 @@
                                     <input type="file" class="form-control" id="images-{{ car.id }}" name="images" multiple required>
                                     <button class="btn btn-primary add-img-btn" data-car-id="{{ car.id }}">Add Images</button>
                                 </div>
-                                {% if car_image_list|length >= 1 %}
+                                {% if car_image_list|length >= 25 %}
                                 <div class="join-race-group">
                                     <input type="text" class="form-control join-code" placeholder="Join Code">
                                     <button class="btn btn-success join-race-btn" data-car-id="{{ car.id }}">Join Race</button>
