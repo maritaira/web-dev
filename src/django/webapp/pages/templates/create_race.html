@@ -138,6 +138,39 @@
         renderCarChecklist(eligibleCars);
     });
 
+    document.getElementById("car-checklist").addEventListener("change", function (e) {
+        if (e.target.name === "selected_cars") {
+            const numCarsInput = document.getElementById("num_cars");
+            const maxSelections = parseInt(numCarsInput.value, 10);
+    
+            const checkboxes = document.querySelectorAll('input[name="selected_cars"]');
+            const selected = document.querySelectorAll('input[name="selected_cars"]:checked');
+            
+            if (selected.length > maxSelections) {
+                // Prevent the user from selecting more
+                e.target.checked = false;
+                alert(`You can only select up to ${maxSelections} cars.`);
+            }
+
+            // UX Improvement: Disable unselected checkboxes if max is reached
+            if (selected.length >= maxSelections) {
+                checkboxes.forEach(cb => {
+                    if (!cb.checked) cb.disabled = true;
+                });
+            } else {
+                checkboxes.forEach(cb => cb.disabled = false);
+            }
+        }
+    });
+
+    document.getElementById("num_cars").addEventListener("input", () => {
+        const checkboxes = document.querySelectorAll('input[name="selected_cars"]');
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+        });
+    });
+
     document.getElementById("createrace-form").onsubmit = async function(event) {
         event.preventDefault();
 

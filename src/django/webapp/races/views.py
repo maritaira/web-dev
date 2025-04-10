@@ -60,13 +60,20 @@ class AddCarView(generics.CreateAPIView):
         serializer = CarSerializer(data=self.request.data)
         if serializer.is_valid():
             # print(f"Saving serializer with owner {self.request.user}")
+            image_files = self.request.FILES.getlist('images')
+            is_eligible = len(image_files) >= 25
             name = serializer.validated_data['name']
             images_folder = f"{self.request.user.username}/{name}/images"
-            car = serializer.save(owner=self.request.user, images_folder=images_folder)
+            
+            car = serializer.save(
+                owner=self.request.user, 
+                images_folder=images_folder,
+                is_eligible=is_eligible
+                )
             print("Car serializer saved")
             
             
-            image_files = self.request.FILES.getlist('images')
+            
             image_instances = []
             
             for image in image_files:
@@ -89,6 +96,50 @@ class AddCarView(generics.CreateAPIView):
         else:
             return Response({'status': 'error', 'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+class AddRaceParticipantsView(generics.CreateAPIView):
+    serializer_class = RaceParticipantSerializer
+    permission_classes = [IsRaceOwner]
+    
+    def post(self, request):
+        race_id = request.data.get('race_id')
+        car_ids = request.data.get('car_ids')
+
+        if not race_id or not car_ids:
+            return Response({"detail": "Missing race_id or car_ids."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        race = get_object_or_404(Race, id=race_id)
+        
+        created_participants = []
+        errors = []
+        
+        for car_id in car_ids:
+            car = Car.objects.filter(id=car_id).first()
+            if not car:
+                errors.append(f"Car ID {car_id} does not exist.")
+                continue
+
+            if RaceParticipant.objects.filter(race=race, car=car).exists():
+                errors.append(f"Car ID {car_id} is already registered.")
+                continue
+
+            participant = RaceParticipant.objects.create(race=race, car=car, car_owner=car.owner)
+            created_participants.append({
+                "race": race.id,
+                "car": car.id,
+                "participant_id": participant.id
+            })
+        
+        if not errors:
+            return Response({
+                "success": True, 
+                "created": created_participants
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            "success": False,
+            "errors": errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+            
 
 class JoinRaceView(generics.CreateAPIView):
     serializer_class = RaceParticipantSerializer
