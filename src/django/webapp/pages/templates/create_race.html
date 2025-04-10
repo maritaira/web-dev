@@ -10,6 +10,30 @@
       overflow-x: hidden; /* Prevent horizontal scroll */
       box-sizing: border-box; /* Ensure padding doesn't cause overflow */
 }
+.dropdown-checklist {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.car-checklist {
+    padding: 1rem;
+}
+.car-checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    margin-bottom: 0.5rem;
+    color: #333; /* ensures it's visible on light backgrounds */
+}
+
+.car-checklist-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
 </style>
 <div class="container my-5">
     <h2 class="text-center mb-4">Create a New Race</h2>
@@ -35,6 +59,13 @@
             <input type="number" id="num_cars" name="num_cars" class="form-control" required>
         </div>
 
+        <div class="mb-3">
+            <label class="form-label">Select Eligible Cars:</label>
+            <div id="car-checklist" class="car-checklist">
+                <!-- Checkboxes will be inserted here dynamically -->
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary w-100">Create Race</button>
     </form>
 
@@ -42,13 +73,82 @@
 </div>
 
 <script>
+    // Simulate fetching eligible cars from backend
+    async function fetchEligibleCars() {
+        console.log("In fetchEligibleCars")
+        
+        const idToken = localStorage.getItem("id_token");
+
+        if (!idToken) {
+            alert("You must be logged in to view eligible cars.");
+            return [];
+        }
+
+        try {
+            const response = await fetch("/eligible-cars/", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch eligible cars.");
+            }
+
+            const data = await response.json();
+            console.log("Response: ", data)
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching eligible cars:", error);
+            return [];
+        }
+
+    }
+
+    function renderCarChecklist(cars) {
+        console.log("In renderCarChecklist")
+        console.log(cars)
+        const checklist = document.getElementById("car-checklist");
+        checklist.innerHTML = "";
+        cars.forEach(car => {
+            console.log("ID: ", car.id)
+            console.log("Name: ", car.name)
+            
+            const wrapper = document.createElement("label");
+            wrapper.className = "car-checklist-item";
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.name = "selected_cars";
+            checkbox.value = car.id;
+
+            const nameSpan = document.createElement("span");
+            nameSpan.innerHTML = `<strong>${car.name}</strong> (${car.owner_username})`;
+
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(nameSpan);
+            checklist.appendChild(wrapper);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        const eligibleCars = await fetchEligibleCars();
+        renderCarChecklist(eligibleCars);
+    });
+
     document.getElementById("createrace-form").onsubmit = async function(event) {
         event.preventDefault();
 
         const formData = new FormData(event.target);
         const jsonData = Object.fromEntries(formData.entries());
 
-        console.log("Sending data:", jsonData);
+        // Get selected car IDs
+        const selectedCarCheckboxes = document.querySelectorAll('input[name="selected_cars"]:checked');
+        const selectedCarIds = Array.from(selectedCarCheckboxes).map(cb => cb.value);
+
+        console.log("Sending data for Create Race:", jsonData);
 
         // get the id token from local storage
         const idToken = localStorage.getItem("id_token");
@@ -72,6 +172,45 @@
 
         const result = await response.json();
         console.log("Response:", result);
+        
+        if (response.ok && result.race_id) {
+            document.getElementById("createrace-message").innerText = "Race created. Adding cars...";
+
+            // 2. Add cars as participants
+            const participantResponse = await fetch("/add-participants/", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    race_id: result.race_id,
+                    car_ids: selectedCarIds
+                })
+            });
+
+            const participantResult = await participantResponse.json();
+
+            if (participantResponse.ok && participantResult.success) {
+                document.getElementById("createrace-message").innerText = "Successfully created race and added cars!";
+                setTimeout(() => {
+                    window.location.href = "/pages/raceownerDash/";
+                }, 1000);
+            } else {
+                document.getElementById("createrace-message").innerText =
+                    participantResult.error || "Race created, but failed to add cars.";
+            }
+        } else {
+            document.getElementById("createrace-message").innerText = result.error || "Failed to create race.";
+        }
+    
+    
+    /*
+    } catch (error) {
+        console.error(error);
+        document.getElementById("createrace-message").innerText = "Something went wrong!";
+    }
+
 
         if (result.message) {
             document.getElementById("createrace-message").innerText = "Successfully created race!";
@@ -81,6 +220,7 @@
         } else {
             document.getElementById("createrace-message").innerText = result.error || "Something went wrong!";
         }
+        */
     };
 </script>
 {% endblock %}

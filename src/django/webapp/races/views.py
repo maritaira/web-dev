@@ -34,7 +34,6 @@ class CreateRaceView(generics.CreateAPIView):
         response_data = {
             "message": "Race created successfully",
             "race_id": race.id,
-            "join_code": race.join_code,
             "race": serializer.data
         }
 
@@ -153,7 +152,6 @@ class RaceOwnerMyRacesView(generics.ListAPIView):
                     "location": race.location,
                     "date": race.date.strftime("%Y-%m-%d"),  # Formatting date for JSON
                     "num_cars": race.num_cars,
-                    "join_code": race.join_code,
                     "id": race.id
                 },
                 "cars": cars_and_owners
@@ -228,7 +226,61 @@ class RemoveCarFromRaceView(APIView):
             participant.delete()
             return Response({"message": "Car removed from race successfully."}, status=status.HTTP_204_NO_CONTENT)
         return Response({"error": "Car not found in race."}, status=status.HTTP_404_NOT_FOUND)
+
+class SetCarEligibilityView(APIView):
+    serializer_class = CarSerializer
+    permission_classes = [IsCarOwner]
+    
+    def post(self, request, *args, **kwargs):
+        print("In set eligibility")
+        car_id = request.data.get('car_id')
+        is_eligible = request.data.get('is_eligible')
+
+        if car_id is None or is_eligible is None:
+            return Response({"error": "car_id and is_eligible are required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            car = Car.objects.get(id=car_id, owner=request.user)
+        except Car.DoesNotExist:
+            return Response({"error": "Car not found or you do not have permission."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Convert "true"/"false" strings to boolean if necessary
+        if isinstance(is_eligible, str):
+            is_eligible = is_eligible.lower() == 'true'
+
+        car.is_eligible = is_eligible
+        car.save()
+
+        return Response({
+            "message": f"Car '{car.name}' eligibility set to {car.is_eligible}."
+        }, status=status.HTTP_200_OK)
+
+class ListEligibleCarsView(generics.ListAPIView):
+    serializer_class = CarSerializer
+    permission_classes = [IsRaceOwner]
+    
+    def get_queryset(self):
+        user = self.request.user
+        race_name = self.request.query_params.get("race_name")
+        print(f"race name: {race_name} owned by {user}")
         
+        # Start with eligible cars
+        queryset = Car.objects.filter(is_eligible=True)
+        
+        if race_name:
+            try:
+                race = Race.objects.filter(name=race_name, owner=user)
+            except Race.DoesNotExist as e:
+                print(str(e))
+                return
+            
+            participants = RaceParticipant.objects.filter(race=race).values_list("car_id", flat=True)
+            queryset = queryset.exclude(id__in=participants)
+        
+        print(queryset)
+        return queryset
     
 
 class ListCarsInRaceView(generics.ListAPIView):

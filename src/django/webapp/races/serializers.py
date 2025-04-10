@@ -4,13 +4,15 @@ from .models import Race, Car, RaceParticipant
 class RaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Race
-        fields = ['name', 'date', 'location', 'num_cars']
-        read_only_fields = ["owner", "join_code"]
+        fields = ['id', 'name', 'date', 'location', 'num_cars']
+        read_only_fields = ["owner"]
 
 class CarSerializer(serializers.ModelSerializer):
+    owner_username = serializers.CharField(source='owner.username', read_only=True)
+
     class Meta:
         model = Car
-        fields = ['name']
+        fields = ['id', 'name', 'is_eligible', 'owner_username']
         read_only_fields = ["owner", "images_folder"]
         
 class RaceParticipantSerializer(serializers.ModelSerializer):

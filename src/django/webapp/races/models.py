@@ -11,8 +11,6 @@ class Race(models.Model):
     num_cars = models.IntegerField()
     # links users to races they own (user.races)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="races")
-    join_code = models.UUIDField(default=uuid.uuid4, unique=True)
-    # need video field most likely
     
     def __str__(self):
         return f"{self.name} - {self.date}"
@@ -21,6 +19,7 @@ class Car(models.Model):
     name = models.CharField(max_length=255)
     # links users to cars (user.cars)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cars")
+    is_eligible = models.BooleanField(default=False)
     images_folder = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):

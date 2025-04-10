@@ -60,14 +60,6 @@
       padding: 5px 10px;
       font-size: 0.875rem;
   }
-  .join-race-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-  }
-  .join-race-group input {
-      width: 170px;
-  }
   .add-img-group {
       display: flex;
       align-items: center;
@@ -112,14 +104,8 @@
                                     <!-- Hidden input to send car name -->
                                     <input type="hidden" name="car_name" value="{{ car.name }}">
                                     <input type="file" class="form-control" id="images-{{ car.id }}" name="images" multiple required>
-                                    <button class="btn btn-primary add-img-btn" data-car-id="{{ car.id }}">Add Images</button>
+                                    <button class="btn btn-primary add-img-btn" data-car-id="{{ car.id }}" data-image-count="{{ car_image_list|length }}">Add Images</button>
                                 </div>
-                                {% if car_image_list|length >= 1 %}
-                                <div class="join-race-group">
-                                    <input type="text" class="form-control join-code" placeholder="Join Code">
-                                    <button class="btn btn-success join-race-btn" data-car-id="{{ car.id }}">Join Race</button>
-                                </div>
-                                {% endif %}
                                 <button class="btn btn-danger" data-car-id="{{ car.id }}">Delete Car</button>
                             </div>
                     {% endwith %}
@@ -164,22 +150,6 @@
                 return;
             }
 
-/*
-            // Fetch CSRF token from cookies
-            function getCSRFToken() {
-                let csrfToken = null;
-                document.cookie.split(";").forEach(cookie => {
-                    let [name, value] = cookie.trim().split("=");
-                    if (name === "csrftoken") {
-                        csrfToken = value;
-                    }
-                });
-                return csrfToken;
-            }
-
-            console.log(getCSRFToken())
-            */
-
             try {
                 const response = await fetch("/media/images/", {
                     method: "POST",
@@ -198,6 +168,39 @@
                 if (response.ok) {
                     messageDiv.className = "alert alert-success";
                     messageDiv.innerText = "Successfully added images!";
+
+                    console.log("About to set eligibility")
+
+                    const currentCount = parseInt(this.getAttribute("data-image-count"));
+                    const newUploads = fileInput.files.length;
+                    const totalImages = currentCount + newUploads;
+
+                    console.log('total Images:', totalImages)
+
+                    if (totalImages >= 25) {
+                        try {
+                            const eligibilityResponse = await fetch("/set-car-eligibility/", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    car_id: carId,
+                                    is_eligible: true
+                                })
+                            });
+                
+                            if (eligibilityResponse.ok) {
+                                console.log(`Car ${carId} set as eligible.`);
+                            } else {
+                                const errRes = await eligibilityResponse.json();
+                                console.error("Eligibility update failed:", errRes);
+                            }
+                        } catch (e) {
+                            console.error("Failed to update eligibility:", e);
+                        }
+                    }
                 } else {
                     messageDiv.className = "alert alert-danger";
                     messageDiv.innerText = result.error || "Failed to add images.";
@@ -206,55 +209,6 @@
                 console.error("Error:", error);
             }
         });
-    });
-
-    const joinRaceButtons = document.querySelectorAll('.join-race-btn');
-
-    joinRaceButtons.forEach(button => {
-      button.addEventListener('click', function (e) {
-        e.preventDefault();
-
-        const carId = this.getAttribute('data-car-id');
-        const joinCodeInput = this.parentElement.querySelector('.join-code');
-        const joinCode = joinCodeInput.value;
-
-        if (!joinCode) {
-          alert("Please enter a join code.");
-          return;
-        }
-
-        console.log("Sending car_id", carId);
-        console.log("Sending join_code", joinCode)
-
-        // get the id token from local storage
-        const idToken = localStorage.getItem("id_token");
-
-        if (!idToken) {
-            alert("You must be logged in to create a race.");
-            return;
-        }
-
-        fetch('/join-race/', {
-          method: 'POST',
-          headers: {
-            "Authorization": "Bearer " + idToken,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            'car_id': carId,
-            'join_code': joinCode
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            alert('Joined race successfully!');
-          } else {
-            alert(data.error || 'Failed to join the race.');
-          }
-        })
-        .catch(err => console.error('Error:', err));
-      });
     });
 });
 </script>
