@@ -44,7 +44,7 @@
 
         if (!idToken) {
             alert("You must be logged in to access the Race Owner Dashboard.");
-            window.location.href = "/login/";  // Redirect to login page
+            window.location.href = "/pages/login/";  // Redirect to login page
             return;
         }
 
@@ -160,7 +160,7 @@
     
         if (!idToken) {
             alert("You must be logged in to remove a car.");
-            window.location.href = "/login/";  // Redirect to login page
+            window.location.href = "/pages/login/";  // Redirect to login page
             return;
         }
         
@@ -208,7 +208,7 @@
         const idToken = localStorage.getItem("id_token");
         if (!idToken) {
             alert("You must be logged in to start training.");
-            window.location.href = "/login/";
+            window.location.href = "/pages/login/";
             return;
         }
 

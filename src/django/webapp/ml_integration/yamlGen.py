@@ -1,66 +1,15 @@
-# import yaml
-# import uuid
 import yaml
 import uuid
 import sys
 import json
-# def get_user_input():
-#     # full_name = input("Enter your full name: ")
-#     num_cars = int(input("Enter number of cars: "))
-    
-#     classes = []
-#     for i in range(num_cars):
-#         label = input(f"Enter label for car {i+1}: ")
-#         classes.append({"id": i+1, "label": label})
-    
-#     data = {
-#         # "user": {"full_name": full_name},
-#         "num_classes": num_cars,
-#         "classes": classes
-#     }
-    
-#     filename = f"config_{uuid.uuid4().hex[:8]}.yaml"
-#     with open(filename, "w") as file:
-#         yaml.dump(data, file, default_flow_style=False)
-    
-#     print(f"Configuration saved as {filename}")
+import boto3
+import os
+from webapp.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION_NAME
 
-# def main():
-#     get_user_input()
+# yamlGen.py
 
-# if __name__ == "__main__":
-#     main()
-
-
-# '''
-# Process for front end:
-
-# assuming that the user can upload 1 car at a time
-
-# 1. User logs into account(we get user's name and unique ID(if needed))
-# 2. User creates new race (This will be a new folder on their profile)
-# 3. Create a new Folder (E.g. race-xxxx, with subfolders (e.g images, weights, config))
-# 3. User uploads batch of photos for Car 1 (these photos would be stored in that race folder under the images subfolder; we will data split later in training)
-# 4. User inputs label for the car (that is name of the folder of images)
-# 5. User submits above information for Car 1
-# 6. yamlGen.py parses submitted information to get num_classes + 1 and add id+ class label for Car 1
-
-# (Repeat steps 2-4 for as many cars he wants to upload until finished)
-
-# 6. yaml file = race-xxxx -> config 
-# 7. For each class = race-xxxx -> images -> [class_label_created_by_user]
-# 8. Start training script (should generate train/validation subfolders within race-xxxx -> images)
-# 9. Generated model weights after training = race-xxxx -> weights
-# '''
-
-def main():
+def generateYam(race_id, owner, race_name, num_cars, classes):
     try:
-        input_data = json.loads(sys.stdin.read())
-
-        race_id = input_data["race_id"]
-        num_cars = input_data["num_classes"]
-        classes = input_data["classes"]
-
         data = {
             "race_id": race_id,
             "num_classes": num_cars,
@@ -68,14 +17,35 @@ def main():
         }
 
         filename = f"config_{race_id}_{uuid.uuid4().hex[:8]}.yaml"
-        with open(filename, "w") as file:
+        local_file_path = f"/tmp/{filename}"
+        with open(local_file_path, "w") as file:
             yaml.dump(data, file, default_flow_style=False)
 
-        print(f"Configuration saved as {filename}")
+        print(f"📝 Configuration saved locally as {local_file_path}")
+
+        bucket_name = "sp4-races-bucket"
+        s3_key = f"{owner}/{race_name}/config/{filename}"
+        upload_file_to_s3(local_file_path, bucket_name, s3_key)
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        raise  # Let Django catch and log this
 
-if __name__ == "__main__":
-    main()
+def upload_file_to_s3(file_path, bucket_name, key):
+    s3 = boto3.client('s3')
+    s3.upload_file(file_path, bucket_name, key)
+    print(f"Uploaded {file_path} to s3://{bucket_name}/{key}")
+
+def main():
+    try:
+        input_data = json.loads(sys.stdin.read())
+        generateYam(
+            race_id=input_data["race_id"],
+            owner=input_data["owner"],
+            race_name=input_data["race_name"],
+            num_cars=input_data["num_classes"],
+            classes=input_data["classes"]
+        )
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
