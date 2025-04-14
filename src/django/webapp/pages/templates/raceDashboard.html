@@ -20,6 +20,10 @@
         width: 100%; /* Ensures table scales properly */
         table-layout: auto;
     }
+    .car-checklist-item {
+        display: block;
+        margin-bottom: 6px; /* Optional spacing between items */
+    }
 </style>
 <div class="container">
     <h2>Welcome to Your Race Track Owner Dashboard</h2>
@@ -37,6 +41,111 @@
 </div>
 
 <script>
+    async function fetchEligibleCarsForRace(raceId) {
+        const idToken = localStorage.getItem("id_token");
+        if (!idToken) {
+            alert("You must be logged in to view eligible cars.");
+            return [];
+        }
+    
+        try {
+            const response = await fetch(`/eligible-cars/?race_id=${raceId}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json"
+                }
+            });
+    
+            if (!response.ok) throw new Error("Failed to fetch eligible cars.");
+            const data = await response.json();
+            console.log("Response: ", data)
+            return data || [];
+        } catch (error) {
+            console.error(`Error fetching eligible cars for race ${raceId}:`, error);
+            return [];
+        }
+    }
+
+    function renderChecklistForRace(raceId, cars) {
+        const checklistContainer = document.getElementById(`car-checklist-${raceId}`);
+
+        if (!checklistContainer) {
+            console.warn(`Element with ID "car-checklist-${raceId}" not found.`);
+            return;
+        }
+
+        checklistContainer.innerHTML = "";
+    
+        cars.forEach(car => {
+            const wrapper = document.createElement("label");
+            wrapper.className = "car-checklist-item";
+    
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.name = `selected_cars_${raceId}`;
+            checkbox.value = car.id;
+            checkbox.style.marginRight = "8px";
+    
+            const nameSpan = document.createElement("span");
+            nameSpan.innerHTML = `<strong>${car.name}</strong> (${car.owner_username})`;
+    
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(nameSpan);
+            checklistContainer.appendChild(wrapper);
+        });
+
+        // Add change handler to enforce max selections
+        checklistContainer.addEventListener("change", function (e) {
+            if (e.target.name === `selected_cars_${raceId}`) {
+                const max = parseInt(document.getElementById(`max-cars-${raceId}`).textContent, 10);
+                const current = parseInt(document.getElementById(`cur-cars-${raceId}`).textContent, 10);
+                const checkboxes = checklistContainer.querySelectorAll(`input[name="selected_cars_${raceId}"]`);
+                const selected = checklistContainer.querySelectorAll(`input[name="selected_cars_${raceId}"]:checked`);
+
+                if (selected.length + current > max) {
+                    e.target.checked = false;
+                    alert(`You can only select up to ${max} cars.`);
+                }
+
+                checkboxes.forEach(cb => cb.disabled = (selected.length + current) >= max && !cb.checked);
+            }
+        });
+    }
+
+    async function submitParticipants(raceId) {
+        const idToken = localStorage.getItem("id_token");
+        if (!idToken) {
+            alert("You must be logged in add cars to your race.");
+            return [];
+        }
+        const selectedCheckboxes = document.querySelectorAll(`input[name="selected_cars_${raceId}"]:checked`);
+        console.log("selected num: ", selectedCheckboxes.length)
+        const selectedCarIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        console.log("Selected cars: ", selectedCarIds)
+    
+        try {
+            const response = await fetch("/add-participants/", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + idToken,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    race_id: raceId,
+                    car_ids: selectedCarIds
+                })
+            });
+    
+            if (!response.ok) throw new Error("Failed to add participants.");
+            alert("Participants successfully added!");
+            window.location.reload();
+        } catch (error) {
+            console.error("Error adding participants:", error);
+            alert("Failed to add participants.");
+        }
+    }
+
     // Check if the user is authenticated by verifying the idToken
     document.addEventListener("DOMContentLoaded", async function() {
         // Retrieve the idToken from localStorage
@@ -70,7 +179,7 @@
             raceAccordion.innerHTML = ''; // Clear previous content
 
             if (data && Object.keys(data).length > 0) {
-                Object.keys(data).forEach((raceName, index) => {
+                Object.keys(data).forEach(async (raceName, index) => {
                     const raceDetails = data[raceName].details;
                     const cars = data[raceName].cars;
 
@@ -92,6 +201,8 @@
                                 <p><strong>Location:</strong> ${raceDetails.location}</p>
                                 <p><strong>Date:</strong> ${raceDetails.date}</p>
                                 <p><strong>Total Number of Cars:</strong> ${raceDetails.num_cars}</p>
+                                <span id="max-cars-${raceDetails.id}" style="display:none">${raceDetails.num_cars}</span>
+                                <span id="cur-cars-${raceDetails.id}" style="display:none">${cars.length}</span>
 
                                 <table class="table table-striped">
                                     <thead>
@@ -120,6 +231,18 @@
                                     </tbody>
                                 </table>
 
+                                ${cars.length < raceDetails.num_cars ? `
+                                    <div class="add-cars-section mt-3">
+                                        <label for="car-checklist-${raceDetails.id}"><strong>Select cars to add:</strong></label>
+                                        <div id="car-checklist-${raceDetails.id}" class="form-select" multiple>
+                                            <!-- Options will be populated via JS -->
+                                        </div>
+                                        <button class="btn btn-primary mt-2" onclick="submitParticipants('${raceDetails.id}')">
+                                            Add Cars
+                                        </button>
+                                    </div>
+                                ` : ''}
+
                                 <!-- Start Training Button (Only visible if number of cars matches num_cars) -->
                                 <div class="btn-container">
                                     <button class="btn btn-success btn-lg" 
@@ -134,6 +257,11 @@
                     `;
 
                     raceAccordion.appendChild(accordionItem);
+                    
+                    if (cars.length < raceDetails.num_cars) {
+                        const eligible = await fetchEligibleCarsForRace(raceDetails.id);
+                        renderChecklistForRace(raceDetails.id, eligible);
+                    }
                 });
             } else {
                 raceAccordion.innerHTML = "<p>No races found.</p>";

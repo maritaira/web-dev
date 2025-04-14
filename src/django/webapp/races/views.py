@@ -101,10 +101,12 @@ class AddRaceParticipantsView(generics.CreateAPIView):
     permission_classes = [IsRaceOwner]
     
     def post(self, request):
+        # print("IN AddRacePArticipants view")
         race_id = request.data.get('race_id')
         car_ids = request.data.get('car_ids')
 
         if not race_id or not car_ids:
+            print("You need a race id and at least one car id")
             return Response({"detail": "Missing race_id or car_ids."}, status=status.HTTP_400_BAD_REQUEST)
         
         race = get_object_or_404(Race, id=race_id)
@@ -314,20 +316,20 @@ class ListEligibleCarsView(generics.ListAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        race_name = self.request.query_params.get("race_name")
-        print(f"race name: {race_name} owned by {user}")
+        race_id = self.request.query_params.get("race_id")
+        print(f"race id: {race_id} owned by {user}")
         
         # Start with eligible cars
         queryset = Car.objects.filter(is_eligible=True)
         
-        if race_name:
-            try:
-                race = Race.objects.filter(name=race_name, owner=user)
-            except Race.DoesNotExist as e:
-                print(str(e))
-                return
+        if race_id:
+            # try:
+            #     race = Race.objects.filter(race_id)
+            # except Race.DoesNotExist as e:
+            #     print(str(e))
+            #     return
             
-            participants = RaceParticipant.objects.filter(race=race).values_list("car_id", flat=True)
+            participants = RaceParticipant.objects.filter(race=race_id).values_list("car", flat=True)
             queryset = queryset.exclude(id__in=participants)
         
         print(queryset)
