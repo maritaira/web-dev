@@ -122,6 +122,15 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    // Retrieve the idToken from localStorage
+    const idToken = localStorage.getItem("id_token");
+    
+    if (!idToken) {
+        alert("You must be logged in to access the My Cars Page.");
+        window.location.href = "/pages/login/";  // Redirect to login page
+        return;
+    }
+    
     document.querySelectorAll(".add-img-btn").forEach(button => {
         button.addEventListener("click", async function (event) {
             event.preventDefault();

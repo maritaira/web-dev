@@ -11,8 +11,36 @@ import time
 import os
 from PIL import Image
 import multiprocessing
+import boto3
+from webapp.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION_NAME
+from django.http import JsonResponse
+import shutil
+# Helper Functions
 
-#early stop class to prevent model from overfitting on training using epoch accuracy as a metric
+def download_s3_folder(bucket, prefix, local_dir):
+    s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                      aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                      region_name=AWS_REGION_NAME)
+    response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    if 'Contents' in response:
+        for obj in response['Contents']:
+            if obj['Key'].endswith('/'):
+                continue
+            target = os.path.join(local_dir, os.path.relpath(obj['Key'], prefix))
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            s3.download_file(bucket, obj['Key'], target)
+            print(f"Downloaded: {obj['Key']} to {target}")
+
+def upload_file_to_s3(file_path, bucket_name, key):
+    s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                      aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                      region_name=AWS_REGION_NAME)
+    s3.upload_file(file_path, bucket_name, key)
+    print(f"Uploaded {file_path} to s3://{bucket_name}/{key}")
+
+
+# Early Stopping
+
 class EarlyStopping:
     def __init__(self, patience=4, verbose=False):
         self.patience = patience
@@ -20,11 +48,15 @@ class EarlyStopping:
         self.best_loss = None
         self.early_stop = False
         self.best_model_params = None
+        self.counter = 0
 
     def __call__(self, val_loss, model):
+        if val_loss is None:
+            return
         if self.best_loss is None:
             self.best_loss = val_loss
             self.best_model_params = model.state_dict()
+
         elif val_loss > self.best_loss:
             self.counter += 1
             if self.verbose:
@@ -36,23 +68,20 @@ class EarlyStopping:
             self.best_model_params = model.state_dict()
             self.counter = 0
 
-def imshow(inp, title=None):
-    """Display image for Tensor."""
-    inp = inp.numpy().transpose((1, 2, 0))
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    inp = std * inp + mean
-    inp = np.clip(inp, 0, 1)
-    plt.imshow(inp)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.001)  # pause a bit so that plots are updated
+# def imshow(inp, title=None):
+#     """Display image for Tensor."""
+#     inp = inp.numpy().transpose((1, 2, 0))
+#     mean = np.array([0.485, 0.456, 0.406])
+#     std = np.array([0.229, 0.224, 0.225])
+#     inp = std * inp + mean
+#     inp = np.clip(inp, 0, 1)
+#     plt.imshow(inp)
+#     if title is not None:
+#         plt.title(title)
+#     plt.pause(0.001)
 
-
-def train_model(model, criterion, optimizer, scheduler, num_epochs=25, patience=5, save_path='best.pt'):
+def train_model(model, criterion, optimizer, scheduler, num_epochs=25, patience=5, save_path='./ml_integration/model_output/best.pt'):
     since = time.time()
-
-    #create instance of early stopping
     early_stopping = EarlyStopping(patience=patience, verbose=True)
     best_acc = 0.0
 
@@ -74,7 +103,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25, patience=
                 labels = labels.to(device)
 
                 optimizer.zero_grad()
-
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     _, preds = torch.max(outputs, 1)
@@ -89,24 +117,26 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25, patience=
             if phase == 'train':
                 scheduler.step()
 
+            if dataset_sizes[phase] == 0:
+                print(f"⚠️ No data for {phase} phase. Skipping...")
+                continue
             epoch_loss = running_loss / dataset_sizes[phase]
-            epoch_acc = running_corrects.float() / dataset_sizes[phase] #changed to float for mps use
-            # epoch_acc = running_corrects.double() / dataset_sizes[phase]
+            epoch_acc = running_corrects.float() / dataset_sizes[phase]
 
             print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
 
-            # Save best model weights
             if phase == 'val':
                 if epoch_acc > best_acc:
                     best_acc = epoch_acc
                     torch.save(model.state_dict(), save_path)
-                
+
+                    
                 early_stopping(epoch_loss, model)
-                if early_stopping.early_stop: #if we need to do an early stop
+                if early_stopping.early_stop:
                     print("Stopping Training Early!")
                     time_elapsed = time.time() - since
-                    print(f"Training stopped at epoch {epoch} after {time_elapsed// 60:.0f}m {time_elapsed % 60:.0f}s")
-                    model.load_state_dict(torch.load(save_path, weights_only=True))#later on if we want to just train the model and save weights then remove this line to ensure we do not load the weights
+                    print(f"Training stopped at epoch {epoch} after {time_elapsed//60:.0f}m {time_elapsed%60:.0f}s")
+                    model.load_state_dict(torch.load(save_path))
                     return model
         print()
 
@@ -114,10 +144,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25, patience=
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')
     print(f'Best val Acc: {best_acc:4f}')
 
-    # Load the best model weights
-    model.load_state_dict(torch.load(save_path, weights_only=True))#later on if we want to just train the model and save weights then remove this line to ensure we do not load the weights
+    model.load_state_dict(torch.load(save_path))
     return model
-
 
 def visualize_model(model, num_images=6):
     was_training = model.training
@@ -135,20 +163,40 @@ def visualize_model(model, num_images=6):
 
             for j in range(inputs.size()[0]):
                 images_so_far += 1
-                ax = plt.subplot(num_images//2, 2, images_so_far)
+                ax = plt.subplot(num_images // 2, 2, images_so_far)
                 ax.axis('off')
                 ax.set_title(f'predicted: {class_names[preds[j]]}')
-                imshow(inputs.cpu().data[j])
+                # imshow(inputs.cpu().data[j])
 
                 if images_so_far == num_images:
                     model.train(mode=was_training)
                     return
         model.train(mode=was_training)
 
-def main():
+def main(owner, race_name, race_id, allowed_user_class_pairs):
     cudnn.benchmark = True
-    plt.ion()   # interactive mode
+    plt.ion()
 
+    bucket_name = 'sp4-races-bucket'
+    prefix = f"{owner}/{race_name}/dataset/"  # should end with '/'
+    local_dataset_path = './ml_integration/dataset'
+    save_dir = './ml_integration/model_output'
+    os.makedirs(local_dataset_path, exist_ok=True)
+    os.makedirs(save_dir, exist_ok=True)
+
+    print("Downloading data from S3...")
+    download_s3_folder(bucket_name, prefix, local_dataset_path)
+    print("Download complete.")
+
+
+    data_dir = local_dataset_path
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    if not os.path.isdir(os.path.join(local_dataset_path, 'train')) or not os.path.isdir(os.path.join(local_dataset_path, 'val')):
+        return JsonResponse({"error": "Missing 'train' or 'val' directory"}, status=500)
+
+    print("Starting training...")
     data_transforms = {
         'train': transforms.Compose([
             transforms.RandomResizedCrop(224),
@@ -164,66 +212,62 @@ def main():
         ]),
     }
 
-    # Specify path where the dataset is stored on the EC2 instance
-    data_dir = '/home/ec2-user/'
-
     global image_datasets, dataloaders, dataset_sizes, class_names, device
 
     image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
-                                            data_transforms[x])
-                    for x in ['train', 'val']}
-    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], 
-                                                 batch_size=2,  # Adjust batch size for CPU
-                                                 shuffle=True, 
-                                                 num_workers=4)  # number of subprocesses to fetch data at a time
-                  for x in ['train', 'val']}
+                                              data_transforms[x])
+                      for x in ['train', 'val']}
+    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x],
+                                                  batch_size=2,
+                                                  shuffle=True,
+                                                  num_workers=4)
+                   for x in ['train', 'val']}
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
     class_names = image_datasets['train'].classes
 
-    device = torch.device("cpu")  # Use CPU instead of MPS or CUDA
+    device = torch.device("cpu")
     print(device)
 
-    # Get a batch of training data
     inputs, classes = next(iter(dataloaders['train']))
-
-    # Make a grid from batch
     out = torchvision.utils.make_grid(inputs)
-    imshow(out, title=[class_names[x] for x in classes])
+    # imshow(out, title=[class_names[x] for x in classes])
 
     model_conv = torchvision.models.resnet18(weights='IMAGENET1K_V1')
     for param in model_conv.parameters():
         param.requires_grad = False
 
     num_ftrs = model_conv.fc.in_features
-    model_conv.fc = nn.Linear(num_ftrs, len(class_names)) # Edited to handle correct number of output classes
+    model_conv.fc = nn.Linear(num_ftrs, len(class_names))
     model_conv = model_conv.to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.001, momentum=0.9)
-    
-    # Decrease learning rate after each 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1)
 
-    # Train our model
+    ##save_path = './ml_integration/model_output/best.pt'
     model_conv = train_model(model_conv, criterion, optimizer_conv,
-                           exp_lr_scheduler, num_epochs=25)
+                             exp_lr_scheduler, num_epochs=25)
+
+    print("Uploading trained model...")
+    save_path = './ml_integration/model_output/best.pt'
+    #MIGHT CAUSE ISSUES
+    os.makedirs(save_dir, exist_ok=True)
+
+    
+    upload_file_to_s3(save_path, bucket_name, f"{owner}/{race_name}/model/best.pt")
+
+    dataset_dir = os.path.join('ml_integration', 'dataset')
+    model_output_dir = os.path.join('ml_integration', 'model_output')
+
+    # Delete folders if they exist
+    for folder in [dataset_dir, model_output_dir]:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
+            print(f"Deleted local folder: {folder}")
+        else:
+            print(f"Folder not found (already deleted?): {folder}")
+
 
 if __name__ == '__main__':
     main()
 
-
-"""
-Notes:
-- Decaying the learning rate allows for the training to take large steps at first but 
-    lowering after a couple of epochs allows the model for finer adjustments and converge
-    to a better local minimum without overshooting the optimal solution
-- By not decaying the learning rate it will likely overshoot the optimal solution and lead to 
-    oscillations. Leads to instability and slower convergence
--Cross Entropy Loss: measures the difference between the predicted probability distribution 
-    and the true distribution.
--for scaling, think about saving each weight .pt file for each user and replace based on if they want to keep
-    or replace their old saved configurations in a bucket
-
-TODO:
-- When training on 1 class, accuracy goes to 1, need negative data/class to set a threshold
-"""

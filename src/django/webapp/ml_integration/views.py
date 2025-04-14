@@ -8,9 +8,9 @@ from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from .data_split import split_dataset_s3
 from django.conf import settings
-
-
-
+from . import transfer_learning_copy
+from . import yamlGen
+import shutil
 # def generate_yaml(race_id):
 #     """Generates a YAML file with race and car details"""
 #     race = Race.objects.filter(id=race_id)
@@ -49,6 +49,8 @@ def get_user_class_pairs(race_id):
         
     return pairs
 
+
+
 @csrf_exempt
 def start_training(request):
     if request.method == "POST":
@@ -71,18 +73,21 @@ def start_training(request):
                 return JsonResponse({"error": "Missing required data"}, status=400)
 
             # Run yamlGen.py
-            yaml_process = subprocess.run(
-                ["python3", "./ml_integration/yamlGen.py"],  # Ensure correct path
-                input=json.dumps({"race_id": race_id, "num_classes": num_cars, "classes": car_names}),
-                capture_output=True,
-                text=True
+            # yaml_process = subprocess.run(
+            #     ["python3", "./ml_integration/yamlGen.py"],  # Ensure correct path
+            #     input=json.dumps({"race_id": race_id, "num_classes": num_cars, "classes": car_names}),
+            #     capture_output=True,
+            #     text=True
+            # )
+            yamlGen.generateYam(
+                race_id=race_id,
+                owner=owner,
+                race_name=race_name,
+                num_cars=num_cars,
+                classes=car_names
             )
 
-            print("📄 yamlGen.py Output:", yaml_process.stdout)
-            print("⚠️ yamlGen.py Error (if any):", yaml_process.stderr)
-
-            if yaml_process.returncode != 0:
-                return JsonResponse({"error": "yamlGen.py failed", "details": yaml_process.stderr}, status=500)
+            print("yamlGen successful!")
 
             # Data Split
             
@@ -94,6 +99,9 @@ def start_training(request):
             
             split_dataset_s3(src_bucket, dst_bucket, source_prefix, dst_prefix, allowed_user_class_pairs=allowed_user_class_pairs)
             
+            #Run transfer_learning copy
+            
+            transfer_learning_copy.main(owner, race_name, race_id, allowed_user_class_pairs)
             # # Run data_split.py
             # split_process = subprocess.run(
             #     ["python3", "./ml_integration/data_split.py"],  # Ensure correct path
