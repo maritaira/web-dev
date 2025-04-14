@@ -1,101 +1,100 @@
-import os
-import boto3
 import torch
-from torchvision import datasets, transforms, models
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from datetime import datetime
-from django.http import JsonResponse
+from torch.optim import lr_scheduler
+import torch.backends.cudnn as cudnn
+import numpy as np
+import torchvision
+from torchvision import datasets, models, transforms
+import matplotlib.pyplot as plt
+import time
+import os
+from PIL import Image
+import multiprocessing
+import boto3
 from webapp.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION_NAME
-
-
-# Define your AWS S3 bucket
-bucket_name = 'sp4-races-bucket'
-
-# Dummy placeholder; replace with your real function
-def get_user_class_pairs(race_id):
-    # Should return a list of (username, class_name) tuples
-    return [('john', 'camaro'), ('alice', 'supra')]
+from django.http import JsonResponse
+import shutil
+# Helper Functions
 
 def download_s3_folder(bucket, prefix, local_dir):
-    try:
-        # Initialize the S3 client once
-        s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=AWS_REGION_NAME)
-    except Exception as e:
-        print(f"Error initializing S3 client: {e}")
-        return
-
-    # List the objects in the S3 bucket with the given prefix
+    s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                      aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                      region_name=AWS_REGION_NAME)
     response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
     if 'Contents' in response:
         for obj in response['Contents']:
             if obj['Key'].endswith('/'):
-                continue  # Skip directories
+                continue
             target = os.path.join(local_dir, os.path.relpath(obj['Key'], prefix))
             os.makedirs(os.path.dirname(target), exist_ok=True)
-
-            try:
-                # Download the file
-                s3.download_file(bucket, obj['Key'], target)
-                print(f"Downloaded: {obj['Key']} to {target}")
-            except Exception as e:
-                print(f"Error downloading {obj['Key']}: {e}")
-    else:
-        print(f"No objects found in {bucket} with prefix {prefix}")
+            s3.download_file(bucket, obj['Key'], target)
+            print(f"Downloaded: {obj['Key']} to {target}")
 
 def upload_file_to_s3(file_path, bucket_name, key):
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                      aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                      region_name=AWS_REGION_NAME)
     s3.upload_file(file_path, bucket_name, key)
     print(f"Uploaded {file_path} to s3://{bucket_name}/{key}")
 
-def filter_dataset(data_dir, allowed_pairs):
-    for split in ['train', 'val']:
-        split_dir = os.path.join(data_dir, split)
-        if not os.path.isdir(split_dir):
-            continue
-        for class_dir in os.listdir(split_dir):
-            full_class_path = os.path.join(split_dir, class_dir)
-            if not os.path.isdir(full_class_path):
-                continue
-            if not any(class_dir == c and u in full_class_path for u, c in allowed_pairs):
-                print(f"Removing disallowed class dir: {full_class_path}")
-                # os.system(f'rm -rf "{full_class_path}"')
 
-def train_model(data_dir, save_dir):
-    data_transforms = {
-        'train': transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-        ]),
-        'val': transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-        ]),
-    }
+# Early Stopping
 
-    image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x])
-                      for x in ['train', 'val']}
+class EarlyStopping:
+    def __init__(self, patience=4, verbose=False):
+        self.patience = patience
+        self.verbose = verbose
+        self.best_loss = None
+        self.early_stop = False
+        self.best_model_params = None
+        self.counter = 0
 
-    dataloaders = {x: DataLoader(image_datasets[x], batch_size=32, shuffle=True, num_workers=4)
-                   for x in ['train', 'val']}
+    def __call__(self, val_loss, model):
+        if val_loss is None:
+            return
+        if self.best_loss is None:
+            self.best_loss = val_loss
+            self.best_model_params = model.state_dict()
 
-    model = models.resnet18(pretrained=True)
-    num_features = model.fc.in_features
-    model.fc = nn.Linear(num_features, len(image_datasets['train'].classes))
+        elif val_loss > self.best_loss:
+            self.counter += 1
+            if self.verbose:
+                print(f"EarlyStopping Counter: {self.counter} out of {self.patience}")
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_loss = val_loss
+            self.best_model_params = model.state_dict()
+            self.counter = 0
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+# def imshow(inp, title=None):
+#     """Display image for Tensor."""
+#     inp = inp.numpy().transpose((1, 2, 0))
+#     mean = np.array([0.485, 0.456, 0.406])
+#     std = np.array([0.229, 0.224, 0.225])
+#     inp = std * inp + mean
+#     inp = np.clip(inp, 0, 1)
+#     plt.imshow(inp)
+#     if title is not None:
+#         plt.title(title)
+#     plt.pause(0.001)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-
+def train_model(model, criterion, optimizer, scheduler, num_epochs=25, patience=5, save_path='./ml_integration/model_output/best.pt'):
+    since = time.time()
+    early_stopping = EarlyStopping(patience=patience, verbose=True)
     best_acc = 0.0
-    for epoch in range(25):  # Adjust number of epochs as needed
-        print(f"Epoch {epoch + 1}")
+
+    for epoch in range(num_epochs):
+        print(f'Epoch {epoch}/{num_epochs - 1}')
+        print('-' * 10)
+
         for phase in ['train', 'val']:
-            model.train() if phase == 'train' else model.eval()
+            if phase == 'train':
+                model.train()
+            else:
+                model.eval()
+
             running_loss = 0.0
             running_corrects = 0
 
@@ -106,96 +105,169 @@ def train_model(data_dir, save_dir):
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
-                    loss = criterion(outputs, labels)
                     _, preds = torch.max(outputs, 1)
+                    loss = criterion(outputs, labels)
+
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
 
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+            if phase == 'train':
+                scheduler.step()
 
-            epoch_loss = running_loss / len(image_datasets[phase])
-            epoch_acc = running_corrects.double() / len(image_datasets[phase])
+            if dataset_sizes[phase] == 0:
+                print(f"⚠️ No data for {phase} phase. Skipping...")
+                continue
+            epoch_loss = running_loss / dataset_sizes[phase]
+            epoch_acc = running_corrects.float() / dataset_sizes[phase]
+
             print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
 
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_path = os.path.join(save_dir, 'best.pt')
-                torch.save(model.state_dict(), best_model_path)
-                print(f"Saved best model to {best_model_path}")
-    metadata_path = os.path.join(save_dir, 'best.pt')
+            if phase == 'val':
+                if epoch_acc > best_acc:
+                    best_acc = epoch_acc
+                    torch.save(model.state_dict(), save_path)
 
+                    
+                early_stopping(epoch_loss, model)
+                if early_stopping.early_stop:
+                    print("Stopping Training Early!")
+                    time_elapsed = time.time() - since
+                    print(f"Training stopped at epoch {epoch} after {time_elapsed//60:.0f}m {time_elapsed%60:.0f}s")
+                    model.load_state_dict(torch.load(save_path))
+                    return model
+        print()
 
-    torch.save({
-        'class_to_idx': image_datasets['train'].class_to_idx,
-        'input_size': 224,
-    }, metadata_path)
+    time_elapsed = time.time() - since
+    print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')
+    print(f'Best val Acc: {best_acc:4f}')
 
-    return best_model_path
+    model.load_state_dict(torch.load(save_path))
+    return model
 
-def main(owner, race_name, race_id):
-    dst_prefix = f"{owner}/{race_name}/dataset/"
-    allowed_user_class_pairs = get_user_class_pairs(race_id)
-    print(f"dst_prefix is: {dst_prefix}")
+def visualize_model(model, num_images=6):
+    was_training = model.training
+    model.eval()
+    images_so_far = 0
+    fig = plt.figure()
 
+    with torch.no_grad():
+        for i, (inputs, labels) in enumerate(dataloaders['val']):
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+
+            for j in range(inputs.size()[0]):
+                images_so_far += 1
+                ax = plt.subplot(num_images // 2, 2, images_so_far)
+                ax.axis('off')
+                ax.set_title(f'predicted: {class_names[preds[j]]}')
+                # imshow(inputs.cpu().data[j])
+
+                if images_so_far == num_images:
+                    model.train(mode=was_training)
+                    return
+        model.train(mode=was_training)
+
+def main(owner, race_name, race_id, allowed_user_class_pairs):
+    cudnn.benchmark = True
+    plt.ion()
+
+    bucket_name = 'sp4-races-bucket'
+    prefix = f"{owner}/{race_name}/dataset/"  # should end with '/'
     local_dataset_path = './ml_integration/dataset'
     save_dir = './ml_integration/model_output'
     os.makedirs(local_dataset_path, exist_ok=True)
     os.makedirs(save_dir, exist_ok=True)
 
-    print(f"Downloading dataset from s3://{bucket_name}/{dst_prefix}")
-    download_s3_folder(bucket_name, dst_prefix, local_dataset_path)
-    print(f"📁 Dataset downloaded to: {local_dataset_path}")
-    print(f"Check if the following directories exist:")
-    print(f"- Train directory: {os.path.join(local_dataset_path, 'train')}")
-    print(f"- Validation directory: {os.path.join(local_dataset_path, 'val')}")
+    print("Downloading data from S3...")
+    download_s3_folder(bucket_name, prefix, local_dataset_path)
+    print("Download complete.")
 
 
+    data_dir = local_dataset_path
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
-    if not os.path.isdir(os.path.join(local_dataset_path, 'train')):
-        print(f"Error: Missing 'train' directory at {local_dataset_path}/train")
-        return JsonResponse({"error": f"Missing 'train' directory at {local_dataset_path}/train"}, status=500)
-    
-    if not os.path.isdir(os.path.join(local_dataset_path, 'val')):
-        print(f"Error: Missing 'val' directory at {local_dataset_path}/val")
-        return JsonResponse({"error": f"Missing 'val' directory at {local_dataset_path}/val"}, status=500)
-
-
-    print("Filtering dataset to include only allowed user-class pairs...")
-    filter_dataset(local_dataset_path, allowed_user_class_pairs)
+    if not os.path.isdir(os.path.join(local_dataset_path, 'train')) or not os.path.isdir(os.path.join(local_dataset_path, 'val')):
+        return JsonResponse({"error": "Missing 'train' or 'val' directory"}, status=500)
 
     print("Starting training...")
-    weights_path = train_model(local_dataset_path, save_dir)
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+    }
 
-    print("Uploading trained model and config to S3...")
-    upload_file_to_s3(weights_path, bucket_name, f"{owner}/{race_name}/weights/best.pt")
+    global image_datasets, dataloaders, dataset_sizes, class_names, device
 
-    print("Training complete!")
+    image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
+                                              data_transforms[x])
+                      for x in ['train', 'val']}
+    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x],
+                                                  batch_size=2,
+                                                  shuffle=True,
+                                                  num_workers=4)
+                   for x in ['train', 'val']}
+    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+    class_names = image_datasets['train'].classes
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--owner', type=str, required=True)
-    parser.add_argument('--race_name', type=str, required=True)
-    parser.add_argument('--race_id', type=str, required=True)
-    args = parser.parse_args()
+    device = torch.device("cpu")
+    print(device)
 
-    main(args.owner, args.race_name, args.race_id)
+    inputs, classes = next(iter(dataloaders['train']))
+    out = torchvision.utils.make_grid(inputs)
+    # imshow(out, title=[class_names[x] for x in classes])
+
+    model_conv = torchvision.models.resnet18(weights='IMAGENET1K_V1')
+    for param in model_conv.parameters():
+        param.requires_grad = False
+
+    num_ftrs = model_conv.fc.in_features
+    model_conv.fc = nn.Linear(num_ftrs, len(class_names))
+    model_conv = model_conv.to(device)
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.001, momentum=0.9)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1)
+
+    ##save_path = './ml_integration/model_output/best.pt'
+    model_conv = train_model(model_conv, criterion, optimizer_conv,
+                             exp_lr_scheduler, num_epochs=25)
+
+    print("Uploading trained model...")
+    save_path = './ml_integration/model_output/best.pt'
+    #MIGHT CAUSE ISSUES
+    os.makedirs(save_dir, exist_ok=True)
+
+    
+    upload_file_to_s3(save_path, bucket_name, f"{owner}/{race_name}/model/best.pt")
+
+    dataset_dir = os.path.join('ml_integration', 'dataset')
+    model_output_dir = os.path.join('ml_integration', 'model_output')
+
+    # Delete folders if they exist
+    for folder in [dataset_dir, model_output_dir]:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
+            print(f"Deleted local folder: {folder}")
+        else:
+            print(f"Folder not found (already deleted?): {folder}")
 
 
-"""
-Notes:
-- Decaying the learning rate allows for the training to take large steps at first but 
-    lowering after a couple of epochs allows the model for finer adjustments and converge
-    to a better local minimum without overshooting the optimal solution
-- By not decaying the learning rate it will likely overshoot the optimal solution and lead to 
-    oscillations. Leads to instability and slower convergence
--Cross Entropy Loss: measures the difference between the predicted probability distribution 
-    and the true distribution.
--for scaling, think about saving each weight .pt file for each user and replace based on if they want to keep
-    or replace their old saved configurations in a bucket
+if __name__ == '__main__':
+    main()
 
-TODO:
-- When training on 1 class, accuracy goes to 1, need negative data/class to set a threshold
-"""

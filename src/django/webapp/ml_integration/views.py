@@ -10,8 +10,7 @@ from .data_split import split_dataset_s3
 from django.conf import settings
 from . import transfer_learning_copy
 from . import yamlGen
-
-
+import shutil
 # def generate_yaml(race_id):
 #     """Generates a YAML file with race and car details"""
 #     race = Race.objects.filter(id=race_id)
@@ -102,7 +101,7 @@ def start_training(request):
             
             #Run transfer_learning copy
             
-            transfer_learning_copy.main(owner, race_name, race_id)
+            transfer_learning_copy.main(owner, race_name, race_id, allowed_user_class_pairs)
             # # Run data_split.py
             # split_process = subprocess.run(
             #     ["python3", "./ml_integration/data_split.py"],  # Ensure correct path
