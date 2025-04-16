@@ -63,6 +63,7 @@ from webapp.settings import (
     AWS_STORAGE_RACES_BUCKET_NAME,
 )
 
+
 def generateYam(race_id, owner, race_name, full_name, car_labels):
     try:
         # Construct classes from labels
@@ -101,8 +102,8 @@ def main():
             race_id=input_data["race_id"],
             owner=input_data["owner"],
             race_name=input_data["race_name"],
-            num_cars=input_data["num_classes"],
-            classes=input_data["classes"]
+            full_name=input_data["full_name"],
+            car_labels=input_data["classes"]
         )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
