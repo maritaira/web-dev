@@ -260,8 +260,16 @@
                     
                     if (cars.length < raceDetails.num_cars) {
                         const eligible = await fetchEligibleCarsForRace(raceDetails.id);
+                        if (eligible.length === 0) {
+                            const checklistDiv = document.getElementById(`car-checklist-${raceDetails.id}`);
+                            checklistDiv.innerHTML = `
+                                <div class="alert alert-warning mt-2" role="alert">
+                                    No eligible cars for selected race.
+                                </div>
+                            `;
+                    } else {
                         renderChecklistForRace(raceDetails.id, eligible);
-                    }
+                    }                    }
                 });
             } else {
                 raceAccordion.innerHTML = "<p>No races found.</p>";
