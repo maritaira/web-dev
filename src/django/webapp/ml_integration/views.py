@@ -80,12 +80,12 @@ def start_training(request):
             #     text=True
             # )
             yamlGen.generateYam(
-                race_id=race_id,
-                owner=owner,
-                race_name=race_name,
-                num_cars=num_cars,
-                classes=car_names
-            )
+            race_id=race_id,
+            owner=owner,
+            race_name=race_name,
+            full_name=request.user.get_full_name(),  # or wherever you get the full name
+            car_labels=car_names
+        )
 
             print("yamlGen successful!")
 
