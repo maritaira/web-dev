@@ -210,6 +210,9 @@
                             console.error("Failed to update eligibility:", e);
                         }
                     }
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                 } else {
                     messageDiv.className = "alert alert-danger";
                     messageDiv.innerText = result.error || "Failed to add images.";

@@ -64,6 +64,7 @@ head, body{
             if (response.ok) {
                 messageDiv.className = "alert alert-success";
                 messageDiv.innerText = "Successfully added car and images!";
+                setTimeout(() => window.location.href = "/pages/all_cars/", 1000);
             } else {
                 messageDiv.className = "alert alert-danger";
                 if (result.message) {

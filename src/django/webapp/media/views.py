@@ -5,7 +5,6 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
-from django.core.files import File
 from .models import Image, Video
 from .serializers import ImageSerializer, VideoSerializer
 from webapp.storages import RacesBucketStorage
@@ -13,6 +12,11 @@ from accounts.permissions import IsCarOwner, IsRaceOwner
 from accounts.auth_backends import CognitoJWTAuthentication
 from rest_framework.decorators import api_view
 from races.models import Car, Race, RaceParticipant
+from pillow_heif import register_heif_opener
+from PIL import Image as PILImage
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import os
 
 # Image ViewSet
 class ImageViewSet(ModelViewSet):
@@ -59,6 +63,11 @@ class ImageViewSet(ModelViewSet):
         try:
             for image in images:
                 print("Attempting to get_serializer with car and image")
+                print(f"image name: {image.name}")
+                if image.name.strip().lower().endswith('.heic'):
+                    print(f"Converting HEIC image: {image.name}")
+                    register_heif_opener()  # Enables Pillow to open HEIC/HEIF formats
+                    image = self.convert_heic_to_jpeg(image)
                 # Store image in the database under the specific car
                 serializer = self.get_serializer(data={'car': car.id, 'image': image})
                 print("Runningn is_valid()")
@@ -104,6 +113,19 @@ class ImageViewSet(ModelViewSet):
         # This will retrieve all car names for a given user
         car_names = Image.objects.filter(username=username).values_list('car_name', flat=True).distinct()
         return list(car_names)
+
+    def convert_heic_to_jpeg(self, file):
+        image = PILImage.open(file)
+
+        output_io = BytesIO()
+        image.save(output_io, format="JPEG")
+        output_io.seek(0)
+
+        new_name = os.path.splitext(file.name)[0] + ".jpg"
+        return InMemoryUploadedFile(
+            output_io, None, new_name, 'image/jpeg',
+            output_io.getbuffer().nbytes, None
+        )
 
 
 # API Endpoints for Syncing and Listing Images
